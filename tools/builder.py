@@ -9,7 +9,7 @@ from models import build_model_from_cfg
 # utils
 from utils.logger import *
 from utils.misc import *
-from timm.scheduler.lr_scheduler import CosineLRScheduler
+from timm.scheduler import CosineLRScheduler
 
 def dataset_builder(args, config):
     dataset = build_dataset_from_cfg(config._base_, config.others)
@@ -73,7 +73,6 @@ def build_opti_sche(base_model, config):
             warmup_t=sche_config.kwargs.initial_epochs,
             cycle_limit=1,
             t_in_epochs=True)
-    elif sche_config.type == 'Step
     elif sche_config.type == 'StepLR':
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, **sche_config.kwargs)
     elif sche_config.type == 'function':
@@ -96,7 +95,7 @@ def resume_model(base_model, args, logger = None):
         return 0, 0
     print_log(f'[RESUME INFO] Loading model weights from {ckpt_path}...', logger = logger )
 
-    # load state dict
+    # load state dict 
     map_location = {'cuda:%d' % 0: 'cuda:%d' % args.local_rank}
     state_dict = torch.load(ckpt_path, map_location=map_location)
     # parameter resume of base model

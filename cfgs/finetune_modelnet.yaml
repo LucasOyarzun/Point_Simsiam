@@ -20,15 +20,8 @@ dataset : {
   test : { _base_: cfgs/dataset_configs/ModelNet40.yaml,
             others: {subset: 'test'}}}
 model : {
-  NAME: PointTransformer,
-  trans_dim: 384,
-  depth: 12,
-  drop_path_rate: 0.1,
+  NAME: PointSimsiamClassifier,
   cls_dim: 40,
-  num_heads: 6,
-  group_size: 32,
-  num_group: 64,
-  encoder_dims: 384,
 }
 
 

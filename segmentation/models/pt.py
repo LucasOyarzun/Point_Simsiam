@@ -238,8 +238,8 @@ class get_model(nn.Module):
             base_ckpt = {k.replace("module.", ""): v for k, v in ckpt['base_model'].items()}
 
             for k in list(base_ckpt.keys()):
-                if k.startswith('MAE_encoder'):
-                    base_ckpt[k[len('MAE_encoder.'):]] = base_ckpt[k]
+                if k.startswith('Simsiam'):
+                    base_ckpt[k[len('Simsiam.'):]] = base_ckpt[k]
                     del base_ckpt[k]
                 elif k.startswith('base_model'):
                     base_ckpt[k[len('base_model.'):]] = base_ckpt[k]

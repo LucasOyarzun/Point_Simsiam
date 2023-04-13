@@ -10,3 +10,6 @@ build/
 TFBoard/
 experiments/
 __pycache__/
+
+env/
+.polyscope.ini

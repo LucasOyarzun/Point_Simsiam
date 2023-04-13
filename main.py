@@ -1,5 +1,6 @@
 from tools import pretrain_run_net as pretrain
 from tools import finetune_run_net as finetune
+from utils.visualization import visualize
 from tools import test_run_net as test_net
 from utils import parser, dist_utils, misc
 from utils.logger import *
@@ -77,7 +78,9 @@ def main():
         config.dataset.val.others.fold = args.fold
         
     # run
-    if args.test:
+    if args.visualization:
+        visualize(args, config)
+    elif args.test:
         test_net(args, config)
     else:
         if args.finetune_model or args.scratch_model:

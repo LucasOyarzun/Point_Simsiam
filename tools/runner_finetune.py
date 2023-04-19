@@ -180,11 +180,6 @@ def run_net(args, config, train_writer=None, val_writer=None):
 
             batch_time.update(time.time() - batch_start_time)
             batch_start_time = time.time()
-
-            # if idx % 10 == 0:
-            #     print_log('[Epoch %d/%d][Batch %d/%d] BatchTime = %.3f (s) DataTime = %.3f (s) Loss+Acc = %s lr = %.6f' %
-            #                 (epoch, config.max_epoch, idx + 1, n_batches, batch_time.val(), data_time.val(),
-            #                 ['%.4f' % l for l in losses.val()], optimizer.param_groups[0]['lr']), logger = logger)
         if isinstance(scheduler, list):
             for item in scheduler:
                 item.step(epoch)
@@ -219,8 +214,6 @@ def run_net(args, config, train_writer=None, val_writer=None):
                         builder.save_checkpoint(base_model, optimizer, epoch, metrics, best_metrics_vote, 'ckpt-best_vote', args, logger = logger)
 
         builder.save_checkpoint(base_model, optimizer, epoch, metrics, best_metrics, 'ckpt-last', args, logger = logger)      
-        # if (config.max_epoch - epoch) < 10:
-        #     builder.save_checkpoint(base_model, optimizer, epoch, metrics, best_metrics, f'ckpt-epoch-{epoch:03d}', args, logger = logger)
     if train_writer is not None:
         train_writer.close()
     if val_writer is not None:

@@ -1,28 +1,17 @@
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
+import copy
+import torch 
+from torch import nn 
+from math import pi, cos 
 from timm.models.layers import DropPath, trunc_normal_
-from utils.checkpoint import get_missing_parameters_message, get_unexpected_parameters_message
-from utils.logger import *
-from utils import misc
-from .backbones import *
 from .build import MODELS
 from .common.LinearClassifier import LinearClassifier
-
-def D(p, z, version="simplified"):
-    if version == "original":
-        z = z.detach()
-        p = F.normalize(p, dim=1)
-        z = F.normalize(z, dim=1)
-        return -(p * z).sum(dim=1).mean()
-    elif version == "simplified":
-        return -F.cosine_similarity(p, z.detach(), dim=-1).mean()
-    else:
-        raise Exception
-
+from .backbones import *
+from .Simsiam import D  # a bit different but it's essentially the same thing: neg cosine sim & stop gradient
+from utils.logger import *
+from utils.checkpoint import get_missing_parameters_message, get_unexpected_parameters_message
 
 class projection_MLP(nn.Module):
-    def __init__(self, in_dim, hidden_dim=2048, out_dim=2048):
+    def __init__(self, in_dim, hidden_dim=4096, out_dim=256):
         super().__init__()
         self.layer1 = nn.Sequential(
             nn.Linear(in_dim, hidden_dim),
@@ -30,23 +19,16 @@ class projection_MLP(nn.Module):
             nn.ReLU(inplace=True),
         )
         self.layer2 = nn.Sequential(
-            nn.Linear(hidden_dim, hidden_dim),
-            nn.BatchNorm1d(hidden_dim),
-            nn.ReLU(inplace=True),
-        )
-        self.layer3 = nn.Sequential(
-            nn.Linear(hidden_dim, out_dim), nn.BatchNorm1d(hidden_dim)
+            nn.Linear(hidden_dim, out_dim),
         )
     def forward(self, x):
         x = self.layer1(x)
         x = self.layer2(x)
-        x = self.layer3(x)
         return x
-
 
 class prediction_MLP(nn.Module):
     def __init__(
-        self, in_dim=2048, hidden_dim=512, out_dim=2048
+        self, in_dim=256, hidden_dim=4096, out_dim=256
     ):  # bottleneck structure
         super().__init__()
         self.layer1 = nn.Sequential(
@@ -62,26 +44,53 @@ class prediction_MLP(nn.Module):
         return x
 
 @MODELS.register_module()
-class PointSimsiam(nn.Module):
-    def __init__(self, config):
+class PointBYOL(nn.Module):
+    def __init__(self):
         super().__init__()
 
         self.encoder = PointNetfeat()
         self.projector = projection_MLP(self.encoder.output_dim)
-        self.predictor = prediction_MLP()
+        self.online_encoder = nn.Sequential(
+            self.encoder,
+            self.projector
+        )
 
+        self.target_encoder = copy.deepcopy(self.online_encoder)
+        self.online_predictor = prediction_MLP()
+        raise NotImplementedError('Please put update_moving_average to training')
+
+    def target_ema(self, k, K, base_ema=4e-3):
+        # tau_base = 0.996 
+        # base_ema = 1 - tau_base = 0.996 
+        return 1 - base_ema * (cos(pi*k/K)+1)/2 
+        # return 1 - (1-self.tau_base) * (cos(pi*k/K)+1)/2 
+
+    @torch.no_grad()
+    def update_moving_average(self, global_step, max_steps):
+        tau = self.target_ema(global_step, max_steps)
+        for online, target in zip(self.online_encoder.parameters(), self.target_encoder.parameters()):
+            target.data = tau * target.data + (1 - tau) * online.data
+            
     def forward(self, x1, x2):
+        f_o, h_o = self.online_encoder, self.online_predictor
+        f_t = self.target_encoder
 
-        f, h = nn.Sequential(self.encoder, self.projector), self.predictor
-        z1, z2 = f(x1), f(x2)
-        p1, p2 = h(z1), h(z2)
-        loss = D(p1, z2) / 2 + D(p2, z1) / 2
-        return loss
+        z1_o = f_o(x1)
+        z2_o = f_o(x2)
 
+        p1_o = h_o(z1_o)
+        p2_o = h_o(z2_o)
 
+        with torch.no_grad():
+            z1_t = f_t(x1)
+            z2_t = f_t(x2)
+        
+        L = D(p1_o, z2_t) / 2 + D(p2_o, z1_t) / 2 
+        return {'loss': L}
+    
 # finetune model
 @MODELS.register_module()
-class PointSimsiamClassifier(nn.Module):
+class PointBYOLClassifier(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.cls_dim = config.cls_dim
@@ -90,9 +99,9 @@ class PointSimsiamClassifier(nn.Module):
         
         self.build_loss_func()
 
-        if config.freeze_encoder:
-           for param in self.encoder.parameters():
-               param.requres_grad = False
+        #if config.freeze:
+        #    for param in self.encoder.parameters():
+        #        param.requres_grad = False
 
     def build_loss_func(self):
         self.loss_ce = nn.CrossEntropyLoss()
@@ -141,8 +150,8 @@ class PointSimsiamClassifier(nn.Module):
                 
 
     def forward(self, x):
+        x = x.permute(0, 2, 1)
         b = self.encoder
         c = self.classifier
         z = nn.Sequential(b, c)(x)
         return z
-

@@ -14,9 +14,7 @@ scheduler: {
 
 dataset : {
   train : { _base_: cfgs/dataset_configs/ShapeNet-55.yaml,
-            others: {subset: 'train', npoints: 1024, augmentation: "noise",
-            num_holes: 5,
-            augmentation_size: 0.1}
+            others: {subset: 'train', npoints: 1024}
             },
   val : { _base_: cfgs/dataset_configs/ShapeNet-55.yaml,
             others: {subset: 'test', npoints: 1024}},
@@ -24,8 +22,15 @@ dataset : {
             others: {subset: 'test', npoints: 1024}}}
 
 model : {
-  NAME: PointSimsiam,
+  NAME: PointSimsiam
   }
+augmentations: {
+  type: "holes",
+  kwargs: {
+    t_size: 0.1,
+    num_holes: 5
+  }
+}
 
 npoints: 1024
 total_bs : 128

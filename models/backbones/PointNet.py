@@ -5,6 +5,7 @@ import torch.utils.data
 from torch.autograd import Variable
 import numpy as np
 import torch.nn.functional as F
+from ..build import MODELS
 
 
 class STN3d(nn.Module):
@@ -95,7 +96,7 @@ class STNkd(nn.Module):
         return x
 
 class PointNetfeat(nn.Module):
-    def __init__(self, global_feat=True, feature_transform=False):
+    def __init__(self, global_feat=True, feature_transform=True):
         super(PointNetfeat, self).__init__()
         self.stn = STN3d()
         self.conv1 = torch.nn.Conv1d(3, 64, 1)
@@ -133,36 +134,74 @@ class PointNetfeat(nn.Module):
         x = x.view(-1, 1024)
         if self.global_feat:
             return x
-            # return x, trans, trans_feat
         else:
             x = x.view(-1, 1024, 1).repeat(1, 1, n_pts)
             return torch.cat([x, pointfeat], 1), trans, trans_feat
 
-
+@MODELS.register_module()
 class PointNetCls(nn.Module):
-    def __init__(self, k=2, feature_transform=False):
+    def __init__(self, config):
         super(PointNetCls, self).__init__()
-        self.feature_transform = feature_transform
-        self.feat = PointNetfeat(global_feat=True, feature_transform=feature_transform)
+        self.cls_dim = config.cls_dim
+        self.feat = PointNetfeat()
         self.fc1 = nn.Linear(1024, 512)
         self.fc2 = nn.Linear(512, 256)
-        self.fc3 = nn.Linear(256, k)
+        self.fc3 = nn.Linear(256, self.cls_dim)
         self.dropout = nn.Dropout(p=0.3)
         self.bn1 = nn.BatchNorm1d(512)
         self.bn2 = nn.BatchNorm1d(256)
         self.relu = nn.ReLU()
 
+        self.build_loss_func()
+
+    def build_loss_func(self):
+        self.loss_ce = nn.CrossEntropyLoss()
+
+    def get_loss_acc(self, ret, gt):
+        loss = self.loss_ce(ret, gt.long())
+        pred = ret.argmax(-1)
+        acc = (pred == gt).sum() / float(gt.size(0))
+        return loss, acc * 100
+
     def forward(self, x):
-        x, trans, trans_feat = self.feat(x)
+        x = x.permute(0, 2, 1)
+        x= self.feat(x)
         x = F.relu(self.bn1(self.fc1(x)))
         x = F.relu(self.bn2(self.dropout(self.fc2(x))))
         x = self.fc3(x)
-        return F.log_softmax(x, dim=1), trans, trans_feat
+        return F.log_softmax(x, dim=1)
 
 
-class PointNetDenseCls(nn.Module):
+class PointNetSemSeg(nn.Module):
+    def __init__(self, config):
+        super(PointNetSemSeg, self).__init__()
+        self.cls_dim = config.cls_dim
+        self.feat = PointNetfeat(global_feat=False, feature_transform=True)
+        self.conv1 = torch.nn.Conv1d(1088, 512, 1)
+        self.conv2 = torch.nn.Conv1d(512, 256, 1)
+        self.conv3 = torch.nn.Conv1d(256, 128, 1)
+        self.conv4 = torch.nn.Conv1d(128, self.cls_dim, 1)
+        self.bn1 = nn.BatchNorm1d(512)
+        self.bn2 = nn.BatchNorm1d(256)
+        self.bn3 = nn.BatchNorm1d(128)
+
+    def forward(self, x):
+        x = x.permute(0, 2, 1)
+        batchsize = x.size()[0]
+        n_pts = x.size()[2]
+        x = self.feat(x)
+        x = F.relu(self.bn1(self.conv1(x)))
+        x = F.relu(self.bn2(self.conv2(x)))
+        x = F.relu(self.bn3(self.conv3(x)))
+        x = self.conv4(x)
+        x = x.transpose(2, 1).contiguous()
+        x = F.log_softmax(x.view(-1, self.k), dim=-1)
+        x = x.view(batchsize, n_pts, self.k)
+        return x
+    
+class PointNetPartSegCls(nn.Module):
     def __init__(self, k=2, feature_transform=False):
-        super(PointNetDenseCls, self).__init__()
+        super(PointNetPartSegCls, self).__init__()
         self.k = k
         self.feature_transform = feature_transform
         self.feat = PointNetfeat(global_feat=False, feature_transform=feature_transform)
@@ -175,9 +214,10 @@ class PointNetDenseCls(nn.Module):
         self.bn3 = nn.BatchNorm1d(128)
 
     def forward(self, x):
+        x = x.permute(0, 2, 1)
         batchsize = x.size()[0]
         n_pts = x.size()[2]
-        x, trans, trans_feat = self.feat(x)
+        x = self.feat(x)
         x = F.relu(self.bn1(self.conv1(x)))
         x = F.relu(self.bn2(self.conv2(x)))
         x = F.relu(self.bn3(self.conv3(x)))
@@ -185,46 +225,4 @@ class PointNetDenseCls(nn.Module):
         x = x.transpose(2, 1).contiguous()
         x = F.log_softmax(x.view(-1, self.k), dim=-1)
         x = x.view(batchsize, n_pts, self.k)
-        return x, trans, trans_feat
-
-
-def feature_transform_regularizer(trans):
-    d = trans.size()[1]
-    batchsize = trans.size()[0]
-    I = torch.eye(d)[None, :, :]
-    if trans.is_cuda:
-        I = I.cuda()
-    loss = torch.mean(
-        torch.norm(torch.bmm(trans, trans.transpose(2, 1)) - I, dim=(1, 2))
-    )
-    return loss
-
-
-if __name__ == "__main__":
-    sim_data = Variable(torch.rand(32, 3, 2500))
-    trans = STN3d()
-    out = trans(sim_data)
-    print("stn", out.size())
-    print("loss", feature_transform_regularizer(out))
-
-    sim_data_64d = Variable(torch.rand(32, 64, 2500))
-    trans = STNkd(k=64)
-    out = trans(sim_data_64d)
-    print("stn64d", out.size())
-    print("loss", feature_transform_regularizer(out))
-
-    pointfeat = PointNetfeat(global_feat=True)
-    out, _, _ = pointfeat(sim_data)
-    print("global feat", out.size())
-
-    pointfeat = PointNetfeat(global_feat=False)
-    out, _, _ = pointfeat(sim_data)
-    print("point feat", out.size())
-
-    cls = PointNetCls(k=5)
-    out, _, _ = cls(sim_data)
-    print("class", out.size())
-
-    seg = PointNetDenseCls(k=3)
-    out, _, _ = seg(sim_data)
-    print("seg", out.size())
+        return x

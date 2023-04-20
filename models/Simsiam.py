@@ -90,9 +90,9 @@ class PointSimsiamClassifier(nn.Module):
         
         self.build_loss_func()
 
-        if config.freeze_encoder:
-           for param in self.encoder.parameters():
-               param.requres_grad = False
+        # if config.freeze_encoder:
+        #    for param in self.encoder.parameters():
+        #        param.requres_grad = False
 
     def build_loss_func(self):
         self.loss_ce = nn.CrossEntropyLoss()

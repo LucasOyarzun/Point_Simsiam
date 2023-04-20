@@ -4,6 +4,9 @@
 @time: 2021/3/19 15:51
 '''
 import os
+import glob
+import h5py
+
 import numpy as np
 import warnings
 import pickle
@@ -16,6 +19,36 @@ import torch
 
 warnings.filterwarnings('ignore')
 
+def load_modelnet_data(config, partition):
+    DATA_DIR = config.DATA_DIR
+    all_data = []
+    all_label = []
+    for h5_name in glob.glob(os.path.join(DATA_DIR, 'modelnet40_ply_hdf5_2048', 'ply_data_%s*.h5'%partition)):
+        f = h5py.File(h5_name)
+        data = f['data'][:].astype('float32')
+        label = f['label'][:].astype('int64')
+        f.close()
+        all_data.append(data)
+        all_label.append(label)
+    all_data = np.concatenate(all_data, axis=0)
+    all_label = np.concatenate(all_label, axis=0)
+    return all_data, all_label
+
+@DATASETS.register_module()
+class ModelNet40_SVM(Dataset):
+    # def __init__(self, num_points=1024, partition='train'):
+    def __init__(self, config): 
+        self.data, self.label = load_modelnet_data(config, config.partition)
+        self.num_points = config.num_points
+        self.partition = config.partition        
+
+    def __getitem__(self, item):
+        pointcloud = self.data[item][:self.num_points]
+        label = self.label[item]
+        return pointcloud, label
+
+    def __len__(self):
+        return self.data.shape[0]
 
 def pc_normalize(pc):
     centroid = np.mean(pc, axis=0)

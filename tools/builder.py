@@ -4,16 +4,22 @@ import torch
 # optimizer
 import torch.optim as optim
 # dataloader
+from torch.utils.data import DataLoader
 from datasets import build_dataset_from_cfg
+from datasets.ModelNetDataset import ModelNet40_SVM
+
 from models import build_model_from_cfg
 # utils
 from utils.logger import *
 from utils.misc import *
 from timm.scheduler import CosineLRScheduler
 
+
+
 def dataset_builder(args, config):
     dataset = build_dataset_from_cfg(config._base_, config.others)
     shuffle = config.others.subset == 'train'
+    
     if args.distributed:
         sampler = torch.utils.data.distributed.DistributedSampler(dataset, shuffle = shuffle)
         dataloader = torch.utils.data.DataLoader(dataset, batch_size = config.others.bs,
@@ -29,6 +35,11 @@ def dataset_builder(args, config):
                                                 num_workers = int(args.num_workers),
                                                 worker_init_fn=worker_init_fn)
     return sampler, dataloader
+
+def dataset_builder_svm(config):
+    train_val_loader = DataLoader(build_dataset_from_cfg(config.train._base_, config.train.others), num_workers=8, batch_size=128, shuffle=True)
+    test_val_loader = DataLoader(build_dataset_from_cfg(config.test._base_, config.test.others), num_workers=8, batch_size=128, shuffle=True)
+    return train_val_loader, test_val_loader
 
 def model_builder(config):
     model = build_model_from_cfg(config)
@@ -65,14 +76,14 @@ def build_opti_sche(base_model, config):
         scheduler = build_lambda_sche(optimizer, sche_config.kwargs)  # misc.py
     elif sche_config.type == 'CosLR':
         scheduler = CosineLRScheduler(optimizer,
-            t_initial=sche_config.kwargs.epochs,
-            t_mul=1,
-            lr_min=1e-6,
-            decay_rate=0.1,
-            warmup_lr_init=1e-6,
-            warmup_t=sche_config.kwargs.initial_epochs,
-            cycle_limit=1,
-            t_in_epochs=True)
+                t_initial=sche_config.kwargs.epochs,
+                t_mul=1,
+                lr_min=1e-6,
+                decay_rate=0.1,
+                warmup_lr_init=1e-6,
+                warmup_t=sche_config.kwargs.initial_epochs,
+                cycle_limit=1,
+                t_in_epochs=True)
     elif sche_config.type == 'StepLR':
         scheduler = torch.optim.lr_scheduler.StepLR(optimizer, **sche_config.kwargs)
     elif sche_config.type == 'function':
@@ -95,7 +106,7 @@ def resume_model(base_model, args, logger = None):
         return 0, 0
     print_log(f'[RESUME INFO] Loading model weights from {ckpt_path}...', logger = logger )
 
-    # load state dict 
+    # load state dict
     map_location = {'cuda:%d' % 0: 'cuda:%d' % args.local_rank}
     state_dict = torch.load(ckpt_path, map_location=map_location)
     # parameter resume of base model
@@ -108,7 +119,6 @@ def resume_model(base_model, args, logger = None):
     best_metrics = state_dict['best_metrics']
     if not isinstance(best_metrics, dict):
         best_metrics = best_metrics.state_dict()
-    # print(best_metrics)
 
     print_log(f'[RESUME INFO] resume ckpts @ {start_epoch - 1} epoch( best_metrics = {str(best_metrics):s})', logger = logger)
     return start_epoch, best_metrics
@@ -142,13 +152,9 @@ def load_model(base_model, ckpt_path, logger = None):
 
     # load state dict
     state_dict = torch.load(ckpt_path, map_location='cpu')
+    
     # parameter resume of base model
-    if state_dict.get('model') is not None:
-        base_ckpt = {k.replace("module.", ""): v for k, v in state_dict['model'].items()}
-    elif state_dict.get('base_model') is not None:
-        base_ckpt = {k.replace("module.", ""): v for k, v in state_dict['base_model'].items()}
-    else:
-        raise RuntimeError('mismatch of ckpt weight')
+    base_ckpt = {k.replace("module.", ""): v for k, v in state_dict['base_model'].items()}
     base_model.load_state_dict(base_ckpt, strict = True)
 
     epoch = -1

@@ -14,8 +14,6 @@ with open(train_data_path, 'rb') as f:
 with open(test_data_path, 'rb') as f:
     test_list_of_points, test_list_of_labels = pickle.load(f)
 
-# list_of_points = train_list_of_points + test_list_of_points  
-# list_of_labels = train_list_of_labels + test_list_of_labels
 
 def generate_fewshot_data(way, shot, prefix_ind, eval_sample=20):
     train_cls_dataset = {}

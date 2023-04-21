@@ -1,7 +1,7 @@
 from tools import pretrain_run_net as pretrain
 from tools import finetune_run_net as finetune
-from utils.visualization import visualize
 from tools import test_run_net as test_net
+from tools import run_visualization as visualization
 from utils import parser, dist_utils, misc
 from utils.logger import *
 from utils.config import *
@@ -79,7 +79,7 @@ def main():
         
     # run
     if args.visualization:
-        visualize(args, config)
+        visualization(args, config) 
     elif args.test:
         test_net(args, config)
     else:

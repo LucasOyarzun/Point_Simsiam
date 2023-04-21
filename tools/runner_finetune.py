@@ -14,21 +14,12 @@ from torchvision import transforms
 
 train_transforms = transforms.Compose(
     [
-         # data_transforms.PointcloudScale(),
-         # data_transforms.PointcloudRotate(),
-         # data_transforms.PointcloudTranslate(),
-         # data_transforms.PointcloudJitter(),
-         # data_transforms.PointcloudRandomInputDropout(),
-         # data_transforms.RandomHorizontalFlip(),
          data_transforms.PointcloudScaleAndTranslate(),
     ]
 )
 
 test_transforms = transforms.Compose(
     [
-        # data_transforms.PointcloudScale(),
-        # data_transforms.PointcloudRotate(),
-        # data_transforms.PointcloudTranslate(),
         data_transforms.PointcloudScaleAndTranslate(),
     ]
 )
@@ -61,7 +52,6 @@ def run_net(args, config, train_writer=None, val_writer=None):
                                                             builder.dataset_builder(args, config.dataset.val)
     # build model
     base_model = builder.model_builder(config.model)
-    
     # parameter setting
     start_epoch = 0
     best_metrics = Acc_Metric(0.)
@@ -100,6 +90,15 @@ def run_net(args, config, train_writer=None, val_writer=None):
     # trainval
     # training
     base_model.zero_grad()
+    # TODO: Check this, comes from Point-M2AE
+    # # only finetune cls head
+    for name, param in base_model.named_parameters():
+        # if 'cls_head_' in name or "norm." in name:
+        param.requires_grad_(True)
+        # else:
+            # param.requires_grad_(False)
+    
+
     for epoch in range(start_epoch, config.max_epoch + 1):
         if args.distributed:
             train_sampler.set_epoch(epoch)
@@ -137,19 +136,15 @@ def run_net(args, config, train_writer=None, val_writer=None):
 
             if points.size(1) < point_all:
                 point_all = points.size(1)
-
             fps_idx = pointnet2_utils.furthest_point_sample(points, point_all)  # (B, npoint)
             fps_idx = fps_idx[:, np.random.choice(point_all, npoints, False)]
             points = pointnet2_utils.gather_operation(points.transpose(1, 2).contiguous(), fps_idx).transpose(1, 2).contiguous()  # (B, N, 3)
-            # import pdb; pdb.set_trace()
+
             points = train_transforms(points)
-
+            points = points.transpose(2, 1).contiguous() #TODO: Check this
             ret = base_model(points)
-
             loss, acc = base_model.module.get_loss_acc(ret, label)
-
             _loss = loss
-
             _loss.backward()
 
             # forward
@@ -180,6 +175,7 @@ def run_net(args, config, train_writer=None, val_writer=None):
 
             batch_time.update(time.time() - batch_start_time)
             batch_start_time = time.time()
+
         if isinstance(scheduler, list):
             for item in scheduler:
                 item.step(epoch)
@@ -203,16 +199,6 @@ def run_net(args, config, train_writer=None, val_writer=None):
                 best_metrics = metrics
                 builder.save_checkpoint(base_model, optimizer, epoch, metrics, best_metrics, 'ckpt-best', args, logger = logger)
                 print_log("--------------------------------------------------------------------------------------------", logger=logger)
-            if args.vote:
-                if metrics.acc > 92.1 or (better and metrics.acc > 91):
-                    metrics_vote = validate_vote(base_model, test_dataloader, epoch, val_writer, args, config, logger=logger)
-                    if metrics_vote.better_than(best_metrics_vote):
-                        best_metrics_vote = metrics_vote
-                        print_log(
-                            "****************************************************************************************",
-                            logger=logger)
-                        builder.save_checkpoint(base_model, optimizer, epoch, metrics, best_metrics_vote, 'ckpt-best_vote', args, logger = logger)
-
         builder.save_checkpoint(base_model, optimizer, epoch, metrics, best_metrics, 'ckpt-last', args, logger = logger)      
     if train_writer is not None:
         train_writer.close()
@@ -220,7 +206,7 @@ def run_net(args, config, train_writer=None, val_writer=None):
         val_writer.close()
 
 def validate(base_model, test_dataloader, epoch, val_writer, args, config, logger = None):
-    # print_log(f"[VALIDATION] Start validating epoch {epoch}", logger = logger)
+    print_log(f"[VALIDATION] Start validating epoch {epoch}", logger = logger)
     base_model.eval()  # set model to eval mode
 
     test_pred  = []
@@ -232,7 +218,7 @@ def validate(base_model, test_dataloader, epoch, val_writer, args, config, logge
             label = data[1].cuda()
 
             points = misc.fps(points, npoints)
-
+            points = points.transpose(2, 1).contiguous() #TODO: Check this
             logits = base_model(points)
             target = label.view(-1)
 
@@ -345,7 +331,6 @@ def test_net(args, config):
     test(base_model, test_dataloader, args, config, logger=logger)
     
 def test(base_model, test_dataloader, args, config, logger = None):
-
     base_model.eval()  # set model to eval mode
 
     test_pred  = []
@@ -376,7 +361,7 @@ def test(base_model, test_dataloader, args, config, logger = None):
 
         acc = (test_pred == test_label).sum() / float(test_label.size(0)) * 100.
         print_log('[TEST] acc = %.4f' % acc, logger=logger)
-
+        
         if args.distributed:
             torch.cuda.synchronize()
 

@@ -3,33 +3,27 @@ import torch.nn as nn
 import json
 import random
 import visdom
+
 from tools import builder
 from utils import misc, dist_utils
 import time
 from utils.logger import *
 from utils.AverageMeter import AverageMeter
-from utils.transformations import get_transformations
-from utils.visdom import vis_pc
 
-from sklearn.svm import LinearSVC
-import numpy as np
+from utils.visdom import vis_pc
 from torchvision import transforms
 from datasets import data_transforms
-from pointnet2_ops import pointnet2_utils
 
 vis = visdom.Visdom()
 
+
+
 train_transforms = transforms.Compose(
     [
-        # data_transforms.PointcloudScale(),
-        # data_transforms.PointcloudRotate(),
-        # data_transforms.PointcloudRotatePerturbation(),
-        # data_transforms.PointcloudTranslate(),
-        # data_transforms.PointcloudJitter(),
-        # data_transforms.PointcloudRandomInputDropout(),
         data_transforms.PointcloudScaleAndTranslate(),
     ]
 )
+
 
 class Acc_Metric:
     def __init__(self, acc = 0.):
@@ -50,15 +44,10 @@ class Acc_Metric:
         return _dict
 
 
-def evaluate_svm(train_features, train_labels, test_features, test_labels):
-    clf = LinearSVC()
-    clf.fit(train_features, train_labels)
-    pred = clf.predict(test_features)
-    return np.sum(test_labels == pred) * 1. / pred.shape[0]
-
 def run_net(args, config, train_writer=None, val_writer=None):
     logger = get_logger(args.log_name)
-    # build dataset
+
+    # build dataset for pre-training
     (train_sampler, train_dataloader), (_, test_dataloader),= builder.dataset_builder(args, config.dataset.train), \
                                                             builder.dataset_builder(args, config.dataset.val)
     (_, extra_train_dataloader)  = builder.dataset_builder(args, config.dataset.extra_train) if config.dataset.get('extra_train') else (None, None)
@@ -67,8 +56,6 @@ def run_net(args, config, train_writer=None, val_writer=None):
     if args.use_gpu:
         base_model.to(args.local_rank)
 
-    # from IPython import embed; embed()
-    
     # parameter setting
     start_epoch = 0
     best_metrics = Acc_Metric(0.)
@@ -92,6 +79,7 @@ def run_net(args, config, train_writer=None, val_writer=None):
     else:
         print_log('Using Data parallel ...' , logger = logger)
         base_model = nn.DataParallel(base_model).cuda()
+
     # optimizer & scheduler
     optimizer, scheduler = builder.build_opti_sche(base_model, config)
     
@@ -101,6 +89,7 @@ def run_net(args, config, train_writer=None, val_writer=None):
     # training
     base_model.zero_grad()
     load_clouds = 0
+    best_accuracy = 0.0
     for epoch in range(start_epoch, config.max_epoch + 1):
         if args.distributed:
             train_sampler.set_epoch(epoch)
@@ -123,8 +112,10 @@ def run_net(args, config, train_writer=None, val_writer=None):
             data_time.update(time.time() - batch_start_time)
             npoints = config.dataset.train.others.npoints
             dataset_name = config.dataset.train._base_.NAME
-            if config.model.NAME == 'PointSimsiam' or config.model.NAME == 'PointBYOL': # Siamese networks
-                data1, data2 = get_transformations(data, config.dataset.train.others.npoints, config.augmentations)
+
+            # Siamese networks requires two different data augmentations
+            if config.dataset.train.others.siamese_network:
+                [ data1, data2 ] = data
                 if dataset_name == 'ShapeNet':
                     if load_clouds <= 4:
                         img_id = random.randint(0, data1.size(0) - 1)
@@ -135,14 +126,15 @@ def run_net(args, config, train_writer=None, val_writer=None):
                     load_clouds += 1
                     data1 = data1.cuda()
                     data2 = data2.cuda()
-                    data1 = data1.transpose(2, 1).contiguous()
-                    data2 = data2.transpose(2, 1).contiguous()
                 else:
                     raise NotImplementedError(f'Train phase do not support {dataset_name} for siamese networks')
-                assert data1.size(2) == npoints
-                assert data2.size(2) == npoints
+                assert data1.size(1) == npoints
+                assert data2.size(1) == npoints
+                data1 = data1.transpose(2, 1).contiguous()
+                data2 = data2.transpose(2, 1).contiguous()
                 loss = base_model(data1, data2)
-
+                
+            # Other kinds of networks only require one sample with data augmentation
             else:
                 if dataset_name == 'ShapeNet':
                     points = data.cuda()
@@ -177,11 +169,9 @@ def run_net(args, config, train_writer=None, val_writer=None):
             if args.distributed:
                 torch.cuda.synchronize()
 
-
             if train_writer is not None:
                 train_writer.add_scalar('Loss/Batch/Loss', loss.item(), n_itr)
                 train_writer.add_scalar('Loss/Batch/LR', optimizer.param_groups[0]['lr'], n_itr)
-
 
             batch_time.update(time.time() - batch_start_time)
             batch_start_time = time.time()
@@ -190,6 +180,7 @@ def run_net(args, config, train_writer=None, val_writer=None):
                 print_log('[Epoch %d/%d][Batch %d/%d] BatchTime = %.3f (s) DataTime = %.3f (s) Losses = %s lr = %.6f' %
                             (epoch, config.max_epoch, idx + 1, n_batches, batch_time.val(), data_time.val(),
                             ['%.4f' % l for l in losses.val()], optimizer.param_groups[0]['lr']), logger = logger)
+            
         if isinstance(scheduler, list):
             for item in scheduler:
                 item.step(epoch)
@@ -206,6 +197,7 @@ def run_net(args, config, train_writer=None, val_writer=None):
         if epoch % 25 ==0 and epoch >=250:
             builder.save_checkpoint(base_model, optimizer, epoch, metrics, best_metrics, f'ckpt-epoch-{epoch:03d}', args,
                                     logger=logger)
+    
     if train_writer is not None:
         train_writer.close()
     if val_writer is not None:

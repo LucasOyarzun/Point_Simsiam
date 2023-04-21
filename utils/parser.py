@@ -49,6 +49,11 @@ def get_args():
         default=False, 
         help = 'test mode for certain ckpt')
     parser.add_argument(
+        '--visualization', 
+        action='store_true', 
+        default=False, 
+        help = 'visualization mode for certain ckpt')
+    parser.add_argument(
         '--finetune_model', 
         action='store_true', 
         default=False, 

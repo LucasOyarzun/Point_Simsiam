@@ -140,8 +140,11 @@ class PointSimsiamClassifier(nn.Module):
                 nn.init.constant_(m.bias, 0)
                 
 
-    def forward(self, x):
+    def forward(self, x, eval=False):
         b = self.encoder
+        if eval: # for linear svm
+            return b(x)
+        
         c = self.classifier
         z = nn.Sequential(b, c)(x)
         return z

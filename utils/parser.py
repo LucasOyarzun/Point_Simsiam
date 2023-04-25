@@ -49,6 +49,11 @@ def get_args():
         default=False, 
         help = 'test mode for certain ckpt')
     parser.add_argument(
+        '--test_svm', 
+        choices=['modelnet40', 'scan'],
+        default=None,
+        help = 'test_svm for certain ckpt')
+    parser.add_argument(
         '--visualization', 
         action='store_true', 
         default=False, 
@@ -58,11 +63,6 @@ def get_args():
         action='store_true', 
         default=False, 
         help = 'finetune modelnet with pretrained weight')
-    parser.add_argument(
-        '--scratch_model', 
-        action='store_true', 
-        default=False, 
-        help = 'training modelnet from scratch')
     parser.add_argument(
         '--mode', 
         choices=['easy', 'median', 'hard', None],

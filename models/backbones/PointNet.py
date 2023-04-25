@@ -5,6 +5,8 @@ import torch.utils.data
 from torch.autograd import Variable
 import numpy as np
 import torch.nn.functional as F
+from utils.checkpoint import get_missing_parameters_message, get_unexpected_parameters_message
+from utils.logger import *
 from ..build import MODELS
 
 
@@ -154,6 +156,28 @@ class PointNetCls(nn.Module):
 
         self.build_loss_func()
 
+    def load_model_from_ckpt(self, ckpt_path):
+        if ckpt_path is not None:
+            ckpt = torch.load(ckpt_path)
+            base_ckpt = {k.replace("module.", ""): v for k, v in ckpt['base_model'].items()}
+
+            incompatible = self.load_state_dict(base_ckpt, strict=False)
+
+            if incompatible.missing_keys:
+                print_log('missing_keys', logger='Classifier')
+                print_log(
+                    get_missing_parameters_message(incompatible.missing_keys),
+                    logger='Classifier'
+                )
+            if incompatible.unexpected_keys:
+                print_log('unexpected_keys', logger='Classifier')
+                print_log(
+                    get_unexpected_parameters_message(incompatible.unexpected_keys),
+                    logger='Classifier'
+                )
+        else:
+            print_log('Training from scratch!!!', logger='Classifier')
+            self.apply(self._init_weights)
     def build_loss_func(self):
         self.loss_ce = nn.CrossEntropyLoss()
 

@@ -1,5 +1,7 @@
 from tools import pretrain_run_net as pretrain
 from tools import finetune_run_net as finetune
+from tools import test_svm_run_net_modelnet40 as test_svm_modelnet40
+from tools import test_svm_run_net_scan as test_svm_scan
 from tools import test_run_net as test_net
 from tools import run_visualization as visualization
 from utils import parser, dist_utils, misc
@@ -80,10 +82,14 @@ def main():
     # run
     if args.visualization:
         visualization(args, config) 
-    elif args.test:
+    elif args.test_svm == 'modelnet40':
+        test_svm_modelnet40(args, config)
+    elif args.test_svm == 'scan':
+        test_svm_scan(args, config)
+    elif args.test: # Voting test
         test_net(args, config)
     else:
-        if args.finetune_model or args.scratch_model:
+        if args.finetune_model:
             finetune(args, config, train_writer, val_writer)
         else:
             pretrain(args, config, train_writer, val_writer)

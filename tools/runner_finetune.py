@@ -122,7 +122,6 @@ def run_net(args, config, train_writer=None, val_writer=None):
             
             points = data[0].cuda()
             label = data[1].cuda()
-
             if npoints == 1024:
                 point_all = 1200
             elif npoints == 2048:

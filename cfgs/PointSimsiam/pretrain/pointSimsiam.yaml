@@ -19,9 +19,8 @@ dataset : {
               npoints: 1024,
               siamese_network: True,
               augmentations: {
-                type: "masks",
-                augmentation_size: 0.1,
-                num_masks: 5
+                type: "noise",
+                augmentation_size: 0.2,
               }
             }
           },

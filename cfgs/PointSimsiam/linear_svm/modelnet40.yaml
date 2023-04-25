@@ -1,0 +1,27 @@
+optimizer: {
+  type: AdamW,
+  kwargs: {
+  lr: 0.001,
+  weight_decay: 0.05}}
+
+scheduler: {
+  type: CosLR,
+  kwargs: {
+    epochs: 400,
+    initial_epochs: 10}}
+
+dataset: {
+  train: { _base_: cfgs/dataset/ModelNet40_SVM.yaml,
+            others: {partition: 'train', num_points: 1024}},
+  val: { _base_: cfgs/dataset/ModelNet40_SVM.yaml,
+            others: {partition: 'test', num_points: 1024}},
+  test: { _base_: cfgs/dataset/ModelNet40_SVM.yaml,
+            others: {partition: 'test', num_points: 1024}}}
+
+model : {
+  NAME: PointSimsiamClassifier,
+  cls_dim: 40,
+}
+
+total_bs: 128
+step_per_update:

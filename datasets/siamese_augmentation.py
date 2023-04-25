@@ -65,10 +65,10 @@ def siamese_augmentation(data, config):
     elif config.augmentations.type == "noise":
         data1 = resample_pcd(
             add_noise_pcd(data, augmentation_size=config.augmentations.augmentation_size),
-            config.augmentations.npoints,
+            config.npoints,
         )
         data2 = resample_pcd(
             add_noise_pcd(data, augmentation_size=config.augmentations.augmentation_size),
-            config.augmentations.npoints,
+            config.npoints,
         )
     return data1, data2

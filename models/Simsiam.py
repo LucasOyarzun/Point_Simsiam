@@ -86,14 +86,20 @@ class PointSimsiamClassifier(nn.Module):
         super().__init__()
         self.cls_dim = config.cls_dim
         self.encoder = PointNetfeat()
-        self.classifier = LinearClassifier(self.encoder.output_dim, self.cls_dim)
+        self.cls_head_finetune = nn.Sequential(
+                nn.Linear(1024, 256),
+                nn.BatchNorm1d(256),
+                nn.ReLU(inplace=True),
+                nn.Dropout(0.5),
+                nn.Linear(256, 256),
+                nn.BatchNorm1d(256),
+                nn.ReLU(inplace=True),
+                nn.Dropout(0.5),
+                nn.Linear(256, self.cls_dim)
+            )
         
         self.build_loss_func()
-
-        # if config.freeze_encoder:
-        #    for param in self.encoder.parameters():
-        #        param.requres_grad = False
-
+        
     def build_loss_func(self):
         self.loss_ce = nn.CrossEntropyLoss()
 
@@ -140,12 +146,12 @@ class PointSimsiamClassifier(nn.Module):
                 nn.init.constant_(m.bias, 0)
                 
 
-    def forward(self, x, eval=False):
+    def forward(self, x, eval_encoder=False):
         b = self.encoder
-        if eval: # for linear svm
+        if eval_encoder: # for linear svm
             return b(x)
         
-        c = self.classifier
+        c = self.cls_head_finetune
         z = nn.Sequential(b, c)(x)
         return z
 

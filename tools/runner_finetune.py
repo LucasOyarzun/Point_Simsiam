@@ -278,7 +278,6 @@ def validate_vote(base_model, test_dataloader, epoch, val_writer, args, config, 
                                                         fps_idx).transpose(1, 2).contiguous()  # (B, N, 3)
 
                 points = test_transforms(points)
-
                 logits = base_model(points)
                 target = label.view(-1)
 
@@ -342,7 +341,7 @@ def test(base_model, test_dataloader, args, config, logger = None):
             label = data[1].cuda()
 
             points = misc.fps(points, npoints)
-
+            points = points.transpose(2, 1).contiguous() #TODO: Check this
             logits = base_model(points)
             target = label.view(-1)
 
@@ -405,7 +404,7 @@ def test_vote(base_model, test_dataloader, epoch, val_writer, args, config, logg
                                                         fps_idx).transpose(1, 2).contiguous()  # (B, N, 3)
 
                 points = test_transforms(points)
-
+                points = points.transpose(2, 1).contiguous() #TODO: Check this
                 logits = base_model(points)
                 target = label.view(-1)
 

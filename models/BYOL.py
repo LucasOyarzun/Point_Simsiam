@@ -45,32 +45,25 @@ class prediction_MLP(nn.Module):
 
 @MODELS.register_module()
 class PointBYOL(nn.Module):
-    def __init__(self):
+    def __init__(self, config):
         super().__init__()
 
         self.encoder = PointNetfeat()
         self.projector = projection_MLP(self.encoder.output_dim)
-        self.online_encoder = nn.Sequential(
-            self.encoder,
-            self.projector
-        )
-
-        self.target_encoder = copy.deepcopy(self.online_encoder)
+        self.online_encoder = nn.Sequential(self.encoder, self.projector)
         self.online_predictor = prediction_MLP()
-        raise NotImplementedError('Please put update_moving_average to training')
+        self.target_encoder = nn.Sequential(self.encoder, self.projector)
 
-    def target_ema(self, k, K, base_ema=4e-3):
-        # tau_base = 0.996 
-        # base_ema = 1 - tau_base = 0.996 
-        return 1 - base_ema * (cos(pi*k/K)+1)/2 
-        # return 1 - (1-self.tau_base) * (cos(pi*k/K)+1)/2 
+    @classmethod
+    def target_ema(cls, k, K, tau_base=0.996):
+        return 1 - tau_base * (cos(pi*k/K)+1)/2 
 
-    @torch.no_grad()
     def update_moving_average(self, global_step, max_steps):
         tau = self.target_ema(global_step, max_steps)
+        self.target_encoder.eval()
         for online, target in zip(self.online_encoder.parameters(), self.target_encoder.parameters()):
             target.data = tau * target.data + (1 - tau) * online.data
-            
+
     def forward(self, x1, x2):
         f_o, h_o = self.online_encoder, self.online_predictor
         f_t = self.target_encoder
@@ -86,7 +79,7 @@ class PointBYOL(nn.Module):
             z2_t = f_t(x2)
         
         L = D(p1_o, z2_t) / 2 + D(p2_o, z1_t) / 2 
-        return {'loss': L}
+        return L
     
 # finetune model
 @MODELS.register_module()
@@ -95,14 +88,20 @@ class PointBYOLClassifier(nn.Module):
         super().__init__()
         self.cls_dim = config.cls_dim
         self.encoder = PointNetfeat()
-        self.classifier = LinearClassifier(self.encoder.output_dim, self.cls_dim)
+        self.cls_head_finetune = nn.Sequential(
+                nn.Linear(1024, 256),
+                nn.BatchNorm1d(256),
+                nn.ReLU(inplace=True),
+                nn.Dropout(0.5),
+                nn.Linear(256, 256),
+                nn.BatchNorm1d(256),
+                nn.ReLU(inplace=True),
+                nn.Dropout(0.5),
+                nn.Linear(256, self.cls_dim)
+            )
         
         self.build_loss_func()
-
-        #if config.freeze:
-        #    for param in self.encoder.parameters():
-        #        param.requres_grad = False
-
+        
     def build_loss_func(self):
         self.loss_ce = nn.CrossEntropyLoss()
 
@@ -149,9 +148,11 @@ class PointBYOLClassifier(nn.Module):
                 nn.init.constant_(m.bias, 0)
                 
 
-    def forward(self, x):
-        x = x.permute(0, 2, 1)
+    def forward(self, x, eval_encoder=False):
         b = self.encoder
-        c = self.classifier
+        if eval_encoder: # for linear svm
+            return b(x)
+        
+        c = self.cls_head_finetune
         z = nn.Sequential(b, c)(x)
         return z

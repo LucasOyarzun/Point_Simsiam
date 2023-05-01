@@ -90,6 +90,7 @@ def run_net(args, config, train_writer=None, val_writer=None):
     base_model.zero_grad()
     load_clouds = 0
     best_accuracy = 0.0
+    max_steps = config.max_epoch * len(train_dataloader)
     for epoch in range(start_epoch, config.max_epoch + 1):
         if args.distributed:
             train_sampler.set_epoch(epoch)
@@ -144,7 +145,9 @@ def run_net(args, config, train_writer=None, val_writer=None):
                 else:
                     raise NotImplementedError(f'Train phase do not support {dataset_name}')
                 assert points.size(1) == npoints
-                points = train_transforms(points)
+
+                if config.model.NAME not in ('PointSimsiam', 'PointBYOL'):
+                    points = train_transforms(points)
                 loss = base_model(points)
 
             try:
@@ -157,6 +160,9 @@ def run_net(args, config, train_writer=None, val_writer=None):
             if num_iter == config.step_per_update:
                 num_iter = 0
                 optimizer.step()
+                if config.model.NAME == 'PointBYOL':
+                    global_step = epoch * len(train_dataloader) + idx
+                    base_model.module.update_moving_average(global_step, max_steps)
                 base_model.zero_grad()
 
             if args.distributed:

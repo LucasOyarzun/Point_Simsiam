@@ -94,10 +94,10 @@ class H_Encoder(nn.Module):
             mask = dist >= radius
         return mask, dist
 
-    def forward(self, neighborhoods, centers, idxs, eval=False):
+    def forward(self, neighborhoods, centers, idxs, eval_encoder=False):
         # generate mask at the highest level
         bool_masked_pos = []
-        if eval:
+        if eval_encoder:
             # no mask
             B, G, _ = centers[-1].shape
             bool_masked_pos.append(torch.zeros(B, G).bool().cuda())
@@ -238,7 +238,7 @@ class Point_M2AE(nn.Module):
         # loss
         self.rec_loss = ChamferDistanceL2().cuda()
 
-    def forward(self, pts, eval=False, **kwargs):
+    def forward(self, pts, eval_encoder=False, **kwargs):
         # multi-scale representations of point clouds
         neighborhoods, centers, idxs = [], [], []
         for i in range(len(self.group_dividers)):
@@ -251,9 +251,9 @@ class Point_M2AE(nn.Module):
             idxs.append(idx)  # neighbor indices
 
         # hierarchical encoder
-        if eval:
+        if eval_encoder:
             # for linear svm
-            x_vis_list, mask_vis_list, _ = self.h_encoder(neighborhoods, centers, idxs, eval=True)
+            x_vis_list, mask_vis_list, _ = self.h_encoder(neighborhoods, centers, idxs, eval_encoder=True)
             x_vis = x_vis_list[-1]
             return x_vis.mean(1) + x_vis.max(1)[0]
         else:

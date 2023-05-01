@@ -98,7 +98,8 @@ class STNkd(nn.Module):
         return x
 
 class PointNetfeat(nn.Module):
-    def __init__(self, global_feat=True, feature_transform=True):
+    def __init__(self, global_feat=True, feature_transform=False):
+        # Feature Transform for PointNet++
         super(PointNetfeat, self).__init__()
         self.stn = STN3d()
         self.conv1 = torch.nn.Conv1d(3, 64, 1)
@@ -189,7 +190,7 @@ class PointNetCls(nn.Module):
 
     def forward(self, x):
         x = x.permute(0, 2, 1)
-        x= self.feat(x)
+        x = self.feat(x)
         x = F.relu(self.bn1(self.fc1(x)))
         x = F.relu(self.bn2(self.dropout(self.fc2(x))))
         x = self.fc3(x)

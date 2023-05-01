@@ -63,13 +63,13 @@ def run_net_svm_modelnet40(args, config):
     feats_train = []
     labels_train = []
     base_model.eval()
-
+    
     for i, (data, label) in enumerate(train_dataloader_svm):
         labels = list(map(lambda x: x[0],label.numpy().tolist()))
         data = data.cuda().contiguous()
         data = data.transpose(2, 1).contiguous()
         with torch.no_grad():
-            feats = base_model(data, eval=True)
+            feats = base_model(data, eval_encoder=True)
         feats = feats.detach().cpu().numpy()
         for feat in feats:
             feats_train.append(feat)
@@ -86,7 +86,7 @@ def run_net_svm_modelnet40(args, config):
         data = data.cuda().contiguous()
         data = data.transpose(2, 1).contiguous()
         with torch.no_grad():
-            feats = base_model(data, eval=True)
+            feats = base_model(data, eval_encoder=True)
         feats = feats.detach().cpu().numpy()
         for feat in feats:
             feats_test.append(feat)
@@ -95,7 +95,7 @@ def run_net_svm_modelnet40(args, config):
     feats_test = np.array(feats_test)
     labels_test = np.array(labels_test)
         
-    model_tl = SVC(C = 0.012, kernel ='linear')
+    model_tl = SVC(C = 0.012, kernel ='linear') # RBM deberia ser mayor
     model_tl.fit(feats_train, labels_train)
     test_accuracy = model_tl.score(feats_test, labels_test)
     print_log(f"Linear Accuracy : {test_accuracy}", logger=logger)
@@ -140,7 +140,7 @@ def run_net_svm_scan(args, config):
         # .detach().cpu().numpy().tolist()
         data = points.cuda().contiguous()
         with torch.no_grad():
-            feats = base_model(data, eval=True)
+            feats = base_model(data, eval_encoder=True)
         feats = feats.detach().cpu().numpy()
         for feat in feats:
             feats_train.append(feat)
@@ -159,7 +159,7 @@ def run_net_svm_scan(args, config):
         labels = list(map(lambda x: x, label.numpy().tolist()))
         data = points.cuda().contiguous()
         with torch.no_grad():
-            feats = base_model(data, eval=True)
+            feats = base_model(data, eval_encoder=True)
         feats = feats.detach().cpu().numpy()
         for feat in feats:
             feats_test.append(feat)

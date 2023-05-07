@@ -1,4 +1,4 @@
-NAME: ModelNet40_SVM
+NAME: ModelNet40_linear_probing
 DATA_DIR: data/
 N_POINTS: 8192
 NUM_CATEGORY: 40

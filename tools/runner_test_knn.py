@@ -8,7 +8,7 @@ from utils import misc, dist_utils
 import time
 from utils.logger import *
 from utils.AverageMeter import AverageMeter
-from sklearn.svm import SVC
+from sklearn.neighbors import KNeighborsClassifier
 
 
 
@@ -31,11 +31,11 @@ class Acc_Metric:
         return _dict
 
 
-def run_net_svm_modelnet40(args, config):
+def run_net_knn_modelnet40(args, config):
     logger = get_logger(args.log_name)
     
-    # build for linear SVM
-    train_dataloader_svm, test_dataloader_svm = builder.dataset_builder_linear_probing(config.dataset)
+    # build for linear KNN
+    train_dataloader_knn, test_dataloader_knn = builder.dataset_builder_linear_probing(config.dataset)
 
     # build model
     base_model = builder.model_builder(config.model)
@@ -59,12 +59,12 @@ def run_net_svm_modelnet40(args, config):
         print_log('Using Data parallel ...' , logger = logger)
         base_model = nn.DataParallel(base_model).cuda()
     
-    ### eval with SVM ###
+    ### eval with KNN ###
     feats_train = []
     labels_train = []
     base_model.eval()
     
-    for i, (data, label) in enumerate(train_dataloader_svm):
+    for i, (data, label) in enumerate(train_dataloader_knn):
         labels = list(map(lambda x: x[0],label.numpy().tolist()))
         data = data.cuda().contiguous()
         with torch.no_grad():
@@ -80,7 +80,7 @@ def run_net_svm_modelnet40(args, config):
     feats_test = []
     labels_test = []
 
-    for i, (data, label) in enumerate(test_dataloader_svm):
+    for i, (data, label) in enumerate(test_dataloader_knn):
         labels = list(map(lambda x: x[0],label.numpy().tolist()))
         data = data.cuda().contiguous()
         with torch.no_grad():
@@ -93,17 +93,17 @@ def run_net_svm_modelnet40(args, config):
     feats_test = np.array(feats_test)
     labels_test = np.array(labels_test)
         
-    model_tl = SVC(C = 0.012, kernel ='linear') # RBM deberia ser mayor
+    model_tl = KNeighborsClassifier(20)
     model_tl.fit(feats_train, labels_train)
     test_accuracy = model_tl.score(feats_test, labels_test)
     print_log(f"Linear Accuracy : {test_accuracy}", logger=logger)
 
 
-def run_net_svm_scan(args, config):
+def run_net_knn_scan(args, config):
     logger = get_logger(args.log_name)
     
-    # build for linear SVM
-    train_dataloader_svm, test_dataloader_svm = builder.dataset_builder_linear_probing(config.dataset)
+    # build for linear KNN
+    train_dataloader_knn, test_dataloader_knn = builder.dataset_builder_linear_probing(config.dataset)
 
     # build model
     base_model = builder.model_builder(config.model)
@@ -125,12 +125,12 @@ def run_net_svm_scan(args, config):
         print_log('Using Data parallel ...' , logger = logger)
         base_model = nn.DataParallel(base_model).cuda()
     
-    ### eval with SVM ###
+    ### eval with KNN ###
     feats_train = []
     labels_train = []
     base_model.eval()
 
-    for idx, (taxonomy_ids, model_ids, data) in enumerate(train_dataloader_svm):
+    for idx, (taxonomy_ids, model_ids, data) in enumerate(train_dataloader_knn):
         points = data[0]
         label = data[1]
 
@@ -150,7 +150,7 @@ def run_net_svm_scan(args, config):
     feats_test = []
     labels_test = []
 
-    for idx, (taxonomy_ids, model_ids, data) in enumerate(test_dataloader_svm):
+    for idx, (taxonomy_ids, model_ids, data) in enumerate(test_dataloader_knn):
         points = data[0]
         label = data[1]
 
@@ -166,7 +166,7 @@ def run_net_svm_scan(args, config):
     feats_test = np.array(feats_test)
     labels_test = np.array(labels_test)
         
-    model_tl = SVC(C = 0.042, kernel ='linear')
+    model_tl = KNeighborsClassifier(20)
     model_tl.fit(feats_train, labels_train)
     test_accuracy = model_tl.score(feats_test, labels_test)
     print_log(f"Linear Accuracy : {test_accuracy}", logger=logger)

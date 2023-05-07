@@ -41,7 +41,6 @@ def run_visualization(args, config, train_writer=None, val_writer=None):
 
             points = data[0].cuda()
             label = data[1].cuda()
-            points = points.transpose(2, 1).contiguous() #TODO: Check this
             feats = base_model.encoder.forward(points)
             X_train.append(feats.cpu().numpy())
             y_train.append(label.cpu().numpy())
@@ -52,11 +51,11 @@ def run_visualization(args, config, train_writer=None, val_writer=None):
     plt.scatter(X_embedded[:, 0], X_embedded[:, 1], c=y_train, cmap=plt.cm.get_cmap("jet", NUM_CLASSES))
     plt.colorbar(ticks=range(1, NUM_CLASSES + 1))
     plt.clim(0.5, NUM_CLASSES + 0.5)
-    plt.savefig('figures/umap_{args.exp_name}.pdf')
+    plt.savefig(f'figures/umap_{args.exp_name}.pdf')
 
     X_embedded = TSNE(n_components=2, perplexity=100, random_state=0).fit_transform(X_train)
     plt.figure(figsize=(16, 16))
     plt.scatter(X_embedded[:, 0], X_embedded[:, 1], c=y_train, cmap=plt.cm.get_cmap("jet", NUM_CLASSES))
     plt.colorbar(ticks=range(1, NUM_CLASSES + 1))
     plt.clim(0.5, NUM_CLASSES + 0.5)
-    plt.savefig('figures/tsne_{args.exp_name}.pdf')
+    plt.savefig(f'figures/tsne_{args.exp_name}.pdf')

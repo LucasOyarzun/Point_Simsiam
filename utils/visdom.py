@@ -1,6 +1,6 @@
-def vis_pc(vis, img, title):
+def vis_pc(vis, pc, title):
     vis.scatter(
-        X=img.reshape(-1, 3),
+        X=pc,
         opts=dict(
             markersize=2,
             title=title,

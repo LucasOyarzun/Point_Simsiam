@@ -11,16 +11,21 @@ scheduler: {
     initial_epochs: 10}}
 
 dataset: {
-  train: { _base_: cfgs/dataset/ModelNet40_SVM.yaml,
+  train: { _base_: cfgs/dataset/ModelNet40_linear_probing.yaml,
             others: {partition: 'train', num_points: 1024}},
-  val: { _base_: cfgs/dataset/ModelNet40_SVM.yaml,
+  val: { _base_: cfgs/dataset/ModelNet40_linear_probing.yaml,
             others: {partition: 'test', num_points: 1024}},
-  test: { _base_: cfgs/dataset/ModelNet40_SVM.yaml,
+  test: { _base_: cfgs/dataset/ModelNet40_linear_probing.yaml,
             others: {partition: 'test', num_points: 1024}}}
 
 model : {
-  NAME: PointSimsiamClassifier,
+  NAME: PointBYOLClassifier,
   cls_dim: 40,
+  encoder: {
+    NAME: PointNetEncoder,
+    space_transform: False,
+    feature_transform: False,
+  },
 }
 
 total_bs: 128

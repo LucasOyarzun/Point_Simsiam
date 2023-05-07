@@ -52,12 +52,22 @@ def get_args():
         '--test_svm', 
         choices=['modelnet40', 'scan'],
         default=None,
-        help = 'test_svm for certain ckpt')
+        help = 'test svm for certain ckpt')
+    parser.add_argument(
+        '--test_knn', 
+        choices=['modelnet40', 'scan'],
+        default=None,
+        help = 'test knn for certain ckpt')
     parser.add_argument(
         '--visualization', 
         action='store_true', 
         default=False, 
         help = 'visualization mode for certain ckpt')
+    parser.add_argument(
+        '--test_invariation', 
+        action='store_true', 
+        default=False, 
+        help = 'test invariation for certain ckpt')
     parser.add_argument(
         '--finetune_model', 
         action='store_true', 
@@ -90,8 +100,14 @@ def get_args():
             'ckpts shouldnt be None while test mode')
 
     if args.finetune_model and args.ckpts is None:
-        print(
-            'training from scratch')
+        print('training from scratch')
+        
+    if args.test_svm and args.ckpts is None:
+        raise ValueError(
+            'ckpts shouldnt be None while test_svm mode')
+    if args.test_knn and args.ckpts is None:
+        raise ValueError(
+            'ckpts shouldnt be None while test_knn mode')
 
     if 'LOCAL_RANK' not in os.environ:
         os.environ['LOCAL_RANK'] = str(args.local_rank)
@@ -100,6 +116,8 @@ def get_args():
         args.exp_name = 'test_' + args.exp_name
     elif args.test_svm is not None:
         args.exp_name = 'test_svm_' + args.test_svm + '_' + args.exp_name
+    elif args.test_knn is not None:
+        args.exp_name = 'test_knn_' + args.test_knn + '_' + args.exp_name
     if args.mode is not None:
         args.exp_name = args.exp_name + '_' +args.mode
     args.experiment_path = os.path.join('./experiments', Path(args.config).stem, Path(args.config).parent.stem, args.exp_name)

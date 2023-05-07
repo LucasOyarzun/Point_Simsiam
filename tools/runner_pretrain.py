@@ -14,13 +14,17 @@ from utils.visdom import vis_pc
 from torchvision import transforms
 from datasets import data_transforms
 
-vis = visdom.Visdom()
-
 
 
 train_transforms = transforms.Compose(
     [
+        data_transforms.PointcloudScale(),
+        data_transforms.PointcloudRotate(),
+        data_transforms.PointcloudTranslate(),
+        data_transforms.PointcloudJitter(),
+        data_transforms.PointcloudRandomInputDropout(),
         data_transforms.PointcloudScaleAndTranslate(),
+
     ]
 )
 
@@ -45,6 +49,7 @@ class Acc_Metric:
 
 
 def run_net(args, config, train_writer=None, val_writer=None):
+    # vis = visdom.Visdom()
     logger = get_logger(args.log_name)
 
     # build dataset for pre-training
@@ -118,12 +123,12 @@ def run_net(args, config, train_writer=None, val_writer=None):
             if config.dataset.train.others.siamese_network:
                 [ data1, data2 ] = data
                 if dataset_name == 'ShapeNet':
-                    if load_clouds <= 4:
-                        img_id = random.randint(0, data1.size(0) - 1)
-                        with open("data/ShapeNet55-34/Shapenet_classes.json") as classes_file:
-                            classes = json.load(classes_file)
-                            vis_pc(vis, data1[img_id], f"{classes[taxonomy_ids[img_id]]}[{img_id}] - 1")
-                            vis_pc(vis, data2[img_id], f"{classes[taxonomy_ids[img_id]]}[{img_id}] - 2")
+                    # if load_clouds <= 4:
+                    #     img_id = random.randint(0, data1.size(0) - 1)
+                    #     with open("data/ShapeNet55-34/Shapenet_classes.json") as classes_file:
+                    #         classes = json.load(classes_file)
+                    #         vis_pc(vis, data1[img_id], f"{classes[taxonomy_ids[img_id]]}[{img_id}] - 1")
+                    #         vis_pc(vis, data2[img_id], f"{classes[taxonomy_ids[img_id]]}[{img_id}] - 2")
                     load_clouds += 1
                     data1 = data1.cuda()
                     data2 = data2.cuda()
@@ -131,8 +136,8 @@ def run_net(args, config, train_writer=None, val_writer=None):
                     raise NotImplementedError(f'Train phase do not support {dataset_name} for siamese networks')
                 assert data1.size(1) == npoints
                 assert data2.size(1) == npoints
-                data1 = data1.transpose(2, 1).contiguous()
-                data2 = data2.transpose(2, 1).contiguous()
+                data1 = train_transforms(data1)
+                data2 = train_transforms(data2)
                 loss = base_model(data1, data2)
                 
             # Other kinds of networks only require one sample with data augmentation
@@ -146,8 +151,7 @@ def run_net(args, config, train_writer=None, val_writer=None):
                     raise NotImplementedError(f'Train phase do not support {dataset_name}')
                 assert points.size(1) == npoints
 
-                if config.model.NAME not in ('PointSimsiam', 'PointBYOL'):
-                    points = train_transforms(points)
+                points = train_transforms(points)
                 loss = base_model(points)
 
             try:

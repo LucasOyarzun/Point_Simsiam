@@ -6,7 +6,7 @@ import torch.optim as optim
 # dataloader
 from torch.utils.data import DataLoader
 from datasets import build_dataset_from_cfg
-from datasets.ModelNetDataset import ModelNet40_SVM
+from datasets.ModelNetDataset import ModelNet40_linear_probing
 
 from models import build_model_from_cfg
 # utils
@@ -36,7 +36,7 @@ def dataset_builder(args, config):
                                                 worker_init_fn=worker_init_fn)
     return sampler, dataloader
 
-def dataset_builder_svm(config):
+def dataset_builder_linear_probing(config):
     train_val_loader = DataLoader(build_dataset_from_cfg(config.train._base_, config.train.others), num_workers=8, batch_size=128, shuffle=True)
     test_val_loader = DataLoader(build_dataset_from_cfg(config.test._base_, config.test.others), num_workers=8, batch_size=128, shuffle=True)
     return train_val_loader, test_val_loader

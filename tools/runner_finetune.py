@@ -140,7 +140,6 @@ def run_net(args, config, train_writer=None, val_writer=None):
             points = pointnet2_utils.gather_operation(points.transpose(1, 2).contiguous(), fps_idx).transpose(1, 2).contiguous()  # (B, N, 3)
 
             points = train_transforms(points)
-            points = points.transpose(2, 1).contiguous() #TODO: Check this
             ret = base_model(points)
             loss, acc = base_model.module.get_loss_acc(ret, label)
             _loss = loss
@@ -217,7 +216,6 @@ def validate(base_model, test_dataloader, epoch, val_writer, args, config, logge
             label = data[1].cuda()
 
             points = misc.fps(points, npoints)
-            points = points.transpose(2, 1).contiguous() #TODO: Check this
             logits = base_model(points)
             target = label.view(-1)
 
@@ -341,7 +339,6 @@ def test(base_model, test_dataloader, args, config, logger = None):
             label = data[1].cuda()
 
             points = misc.fps(points, npoints)
-            points = points.transpose(2, 1).contiguous() #TODO: Check this
             logits = base_model(points)
             target = label.view(-1)
 
@@ -404,7 +401,6 @@ def test_vote(base_model, test_dataloader, epoch, val_writer, args, config, logg
                                                         fps_idx).transpose(1, 2).contiguous()  # (B, N, 3)
 
                 points = test_transforms(points)
-                points = points.transpose(2, 1).contiguous() #TODO: Check this
                 logits = base_model(points)
                 target = label.view(-1)
 

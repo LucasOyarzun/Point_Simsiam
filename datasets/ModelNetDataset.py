@@ -35,7 +35,7 @@ def load_modelnet_data(config, partition):
     return all_data, all_label
 
 @DATASETS.register_module()
-class ModelNet40_SVM(Dataset):
+class ModelNet40_linear_probing(Dataset):
     # def __init__(self, num_points=1024, partition='train'):
     def __init__(self, config): 
         self.data, self.label = load_modelnet_data(config, config.partition)

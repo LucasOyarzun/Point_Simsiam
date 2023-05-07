@@ -8,118 +8,36 @@ import torch.nn.functional as F
 from utils.checkpoint import get_missing_parameters_message, get_unexpected_parameters_message
 from utils.logger import *
 from ..build import MODELS
+from .pointnet_utils import STN3d, STNkd
 
-
-class STN3d(nn.Module):
-    def __init__(self):
-        super(STN3d, self).__init__()
-        self.conv1 = torch.nn.Conv1d(3, 64, 1)
-        self.conv2 = torch.nn.Conv1d(64, 128, 1)
-        self.conv3 = torch.nn.Conv1d(128, 1024, 1)
-        self.fc1 = nn.Linear(1024, 512)
-        self.fc2 = nn.Linear(512, 256)
-        self.fc3 = nn.Linear(256, 9)
-        self.relu = nn.ReLU()
-
-        self.bn1 = nn.BatchNorm1d(64)
-        self.bn2 = nn.BatchNorm1d(128)
-        self.bn3 = nn.BatchNorm1d(1024)
-        self.bn4 = nn.BatchNorm1d(512)
-        self.bn5 = nn.BatchNorm1d(256)
-
-    def forward(self, x):
-        batchsize = x.size()[0]
-        x = F.relu(self.bn1(self.conv1(x)))
-        x = F.relu(self.bn2(self.conv2(x)))
-        x = F.relu(self.bn3(self.conv3(x)))
-        x = torch.max(x, 2, keepdim=True)[0]
-        x = x.view(-1, 1024)
-
-        x = F.relu(self.bn4(self.fc1(x)))
-        x = F.relu(self.bn5(self.fc2(x)))
-        x = self.fc3(x)
-
-        iden = (
-            Variable(
-                torch.from_numpy(
-                    np.array([1, 0, 0, 0, 1, 0, 0, 0, 1]).astype(np.float32)
-                )
-            )
-            .view(1, 9)
-            .repeat(batchsize, 1)
-        )
-        if x.is_cuda:
-            iden = iden.cuda()
-        x = x + iden
-        x = x.view(-1, 3, 3)
-        return x
-
-
-class STNkd(nn.Module):
-    def __init__(self, k=64):
-        super(STNkd, self).__init__()
-        self.conv1 = torch.nn.Conv1d(k, 64, 1)
-        self.conv2 = torch.nn.Conv1d(64, 128, 1)
-        self.conv3 = torch.nn.Conv1d(128, 1024, 1)
-        self.fc1 = nn.Linear(1024, 512)
-        self.fc2 = nn.Linear(512, 256)
-        self.fc3 = nn.Linear(256, k * k)
-        self.relu = nn.ReLU()
-
-        self.bn1 = nn.BatchNorm1d(64)
-        self.bn2 = nn.BatchNorm1d(128)
-        self.bn3 = nn.BatchNorm1d(1024)
-        self.bn4 = nn.BatchNorm1d(512)
-        self.bn5 = nn.BatchNorm1d(256)
-
-        self.k = k
-
-    def forward(self, x):
-        batchsize = x.size()[0]
-        x = F.relu(self.bn1(self.conv1(x)))
-        x = F.relu(self.bn2(self.conv2(x)))
-        x = F.relu(self.bn3(self.conv3(x)))
-        x = torch.max(x, 2, keepdim=True)[0]
-        x = x.view(-1, 1024)
-
-        x = F.relu(self.bn4(self.fc1(x)))
-        x = F.relu(self.bn5(self.fc2(x)))
-        x = self.fc3(x)
-
-        iden = (
-            Variable(torch.from_numpy(np.eye(self.k).flatten().astype(np.float32)))
-            .view(1, self.k * self.k)
-            .repeat(batchsize, 1)
-        )
-        if x.is_cuda:
-            iden = iden.cuda()
-        x = x + iden
-        x = x.view(-1, self.k, self.k)
-        return x
-
-class PointNetfeat(nn.Module):
-    def __init__(self, global_feat=True, feature_transform=False):
+@MODELS.register_module()
+class PointNetEncoder(nn.Module):
+    def __init__(self, config,  global_feat=True):
         # Feature Transform for PointNet++
-        super(PointNetfeat, self).__init__()
-        self.stn = STN3d()
+        super(PointNetEncoder, self).__init__()
         self.conv1 = torch.nn.Conv1d(3, 64, 1)
         self.conv2 = torch.nn.Conv1d(64, 128, 1)
         self.conv3 = torch.nn.Conv1d(128, 1024, 1)
         self.bn1 = nn.BatchNorm1d(64)
         self.bn2 = nn.BatchNorm1d(128)
         self.bn3 = nn.BatchNorm1d(1024)
-        self.global_feat = global_feat
-        self.feature_transform = feature_transform
         self.output_dim = 1024
+        self.global_feat = global_feat
+        self.space_transform = config.space_transform
+        self.feature_transform = config.feature_transform
+        if self.space_transform:
+            self.stn = STN3d()
         if self.feature_transform:
             self.fstn = STNkd(k=64)
 
     def forward(self, x):
-        n_pts = x.size()[2]
-        trans = self.stn(x)
+        n_pts = x.size()[1]
         x = x.transpose(2, 1)
-        x = torch.bmm(x, trans)
-        x = x.transpose(2, 1)
+        if self.space_transform:
+            trans = self.stn(x)
+            x = x.transpose(2, 1)
+            x = torch.bmm(x, trans)
+            x = x.transpose(2, 1)
         x = F.relu(self.bn1(self.conv1(x)))
 
         if self.feature_transform:
@@ -146,7 +64,7 @@ class PointNetCls(nn.Module):
     def __init__(self, config):
         super(PointNetCls, self).__init__()
         self.cls_dim = config.cls_dim
-        self.feat = PointNetfeat()
+        self.encoder = PointNetEncoder(config.encoder, global_feat=True)
         self.fc1 = nn.Linear(1024, 512)
         self.fc2 = nn.Linear(512, 256)
         self.fc3 = nn.Linear(256, self.cls_dim)
@@ -180,7 +98,7 @@ class PointNetCls(nn.Module):
             print_log('Training from scratch!!!', logger='Classifier')
             self.apply(self._init_weights)
     def build_loss_func(self):
-        self.loss_ce = nn.CrossEntropyLoss()
+        self.loss_ce = F.nll_loss
 
     def get_loss_acc(self, ret, gt):
         loss = self.loss_ce(ret, gt.long())
@@ -189,8 +107,7 @@ class PointNetCls(nn.Module):
         return loss, acc * 100
 
     def forward(self, x):
-        x = x.permute(0, 2, 1)
-        x = self.feat(x)
+        x = self.encoder(x)
         x = F.relu(self.bn1(self.fc1(x)))
         x = F.relu(self.bn2(self.dropout(self.fc2(x))))
         x = self.fc3(x)
@@ -201,7 +118,7 @@ class PointNetSemSeg(nn.Module):
     def __init__(self, config):
         super(PointNetSemSeg, self).__init__()
         self.cls_dim = config.cls_dim
-        self.feat = PointNetfeat(global_feat=False, feature_transform=True)
+        self.encoder = PointNetEncoder(global_feat=False, feature_transform=True)
         self.conv1 = torch.nn.Conv1d(1088, 512, 1)
         self.conv2 = torch.nn.Conv1d(512, 256, 1)
         self.conv3 = torch.nn.Conv1d(256, 128, 1)
@@ -211,10 +128,9 @@ class PointNetSemSeg(nn.Module):
         self.bn3 = nn.BatchNorm1d(128)
 
     def forward(self, x):
-        x = x.permute(0, 2, 1)
         batchsize = x.size()[0]
         n_pts = x.size()[2]
-        x = self.feat(x)
+        x = self.encoder(x)
         x = F.relu(self.bn1(self.conv1(x)))
         x = F.relu(self.bn2(self.conv2(x)))
         x = F.relu(self.bn3(self.conv3(x)))
@@ -229,7 +145,7 @@ class PointNetPartSegCls(nn.Module):
         super(PointNetPartSegCls, self).__init__()
         self.k = k
         self.feature_transform = feature_transform
-        self.feat = PointNetfeat(global_feat=False, feature_transform=feature_transform)
+        self.encoder = PointNetEncoder(global_feat=False, feature_transform=feature_transform)
         self.conv1 = torch.nn.Conv1d(1088, 512, 1)
         self.conv2 = torch.nn.Conv1d(512, 256, 1)
         self.conv3 = torch.nn.Conv1d(256, 128, 1)
@@ -239,10 +155,9 @@ class PointNetPartSegCls(nn.Module):
         self.bn3 = nn.BatchNorm1d(128)
 
     def forward(self, x):
-        x = x.permute(0, 2, 1)
         batchsize = x.size()[0]
         n_pts = x.size()[2]
-        x = self.feat(x)
+        x = self.encoder(x)
         x = F.relu(self.bn1(self.conv1(x)))
         x = F.relu(self.bn2(self.conv2(x)))
         x = F.relu(self.bn3(self.conv3(x)))

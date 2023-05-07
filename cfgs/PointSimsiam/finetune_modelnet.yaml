@@ -21,6 +21,11 @@ dataset : {
             others: {subset: 'test'}}}
 model : {
   NAME: PointSimsiamClassifier,
+  encoder: {
+    NAME: PointNetEncoder,
+    space_transform: False,
+    feature_transform: False,
+  },
   cls_dim: 40,
 }
 

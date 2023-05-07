@@ -30,19 +30,24 @@ dataset : {
   test : { _base_: cfgs/dataset/ShapeNet-55.yaml,
             others: {subset: 'test', npoints: 1024}},
   svm: {
-          train: { _base_: cfgs/dataset/ModelNet40_SVM.yaml,
+          train: { _base_: cfgs/dataset/ModelNet40_linear_probing.yaml,
                     others: {partition: 'train', num_points: 1024}},
-          val: { _base_: cfgs/dataset/ModelNet40_SVM.yaml,
+          val: { _base_: cfgs/dataset/ModelNet40_linear_probing.yaml,
                     others: {partition: 'test', num_points: 1024}},
-          test: { _base_: cfgs/dataset/ModelNet40_SVM.yaml,
+          test: { _base_: cfgs/dataset/ModelNet40_linear_probing.yaml,
                     others: {partition: 'test', num_points: 1024}
           }
   }
 }
 
 model : {
-  NAME: PointSimsiam
+  NAME: PointSimsiam,
+  encoder: {
+    NAME: PointNetEncoder,
+    space_transform: False,
+    feature_transform: False,
   }
+}
 
 
 npoints: 1024

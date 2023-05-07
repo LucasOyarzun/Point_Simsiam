@@ -9,6 +9,7 @@ from .backbones import *
 from .Simsiam import D  # a bit different but it's essentially the same thing: neg cosine sim & stop gradient
 from utils.logger import *
 from utils.checkpoint import get_missing_parameters_message, get_unexpected_parameters_message
+from tools import builder
 
 class projection_MLP(nn.Module):
     def __init__(self, in_dim, hidden_dim=4096, out_dim=256):
@@ -48,7 +49,7 @@ class PointBYOL(nn.Module):
     def __init__(self, config):
         super().__init__()
 
-        self.encoder = PointNetfeat()
+        self.encoder = builder.model_builder(config.encoder)
         self.projector = projection_MLP(self.encoder.output_dim)
         self.online_encoder = nn.Sequential(self.encoder, self.projector)
         self.online_predictor = prediction_MLP()
@@ -87,7 +88,7 @@ class PointBYOLClassifier(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.cls_dim = config.cls_dim
-        self.encoder = PointNetfeat()
+        self.encoder = builder.model_builder(config.encoder)
         self.cls_head_finetune = nn.Sequential(
                 nn.Linear(1024, 256),
                 nn.BatchNorm1d(256),

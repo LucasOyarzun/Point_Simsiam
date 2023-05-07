@@ -22,6 +22,10 @@ dataset : {
 model : {
   NAME: PointNetCls,
   cls_dim: 40,
+  encoder: {
+    space_transform: False,
+    feature_transform: False,
+  },
 }
 
 

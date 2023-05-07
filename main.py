@@ -2,8 +2,11 @@ from tools import pretrain_run_net as pretrain
 from tools import finetune_run_net as finetune
 from tools import test_svm_run_net_modelnet40 as test_svm_modelnet40
 from tools import test_svm_run_net_scan as test_svm_scan
+from tools import test_knn_run_net_modelnet40 as test_knn_modelnet40
+from tools import test_knn_run_net_scan as test_knn_scan
 from tools import test_run_net as test_net
 from tools import run_visualization as visualization
+from tools import run_test_invariation as test_invariation
 from utils import parser, dist_utils, misc
 from utils.logger import *
 from utils.config import *
@@ -82,10 +85,16 @@ def main():
     # run
     if args.visualization:
         visualization(args, config) 
+    elif args.test_invariation:
+        test_invariation(args, config)
     elif args.test_svm == 'modelnet40':
         test_svm_modelnet40(args, config)
     elif args.test_svm == 'scan':
         test_svm_scan(args, config)
+    elif args.test_knn == 'modelnet40':
+        test_knn_modelnet40(args, config)
+    elif args.test_knn == 'scan':
+        test_knn_scan(args, config)
     elif args.test: # Voting test
         test_net(args, config)
     else:

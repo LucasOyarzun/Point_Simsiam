@@ -4,7 +4,6 @@ from torch import nn
 from math import pi, cos 
 from timm.models.layers import DropPath, trunc_normal_
 from .build import MODELS
-from .common.LinearClassifier import LinearClassifier
 from .backbones import *
 from .Simsiam import D  # a bit different but it's essentially the same thing: neg cosine sim & stop gradient
 from utils.logger import *

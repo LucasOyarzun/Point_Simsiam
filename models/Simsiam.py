@@ -7,7 +7,6 @@ from utils.logger import *
 from utils import misc
 from .backbones import *
 from .build import MODELS
-from .common.LinearClassifier import LinearClassifier
 from tools import builder
 
 def D(p, z, version="simplified"):

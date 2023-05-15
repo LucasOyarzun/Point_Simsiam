@@ -26,7 +26,7 @@ class projection_MLP(nn.Module):
     def __init__(self, in_dim, hidden_dim=2048, out_dim=2048):
         super().__init__()
         self.layer1 = nn.Sequential(
-            nn.Linear(in_dim, hidden_dim),
+            nn.Linear(in_dim*2, hidden_dim),
             nn.BatchNorm1d(hidden_dim),
             nn.ReLU(inplace=True),
         )
@@ -88,7 +88,7 @@ class PointSimsiamClassifier(nn.Module):
         self.cls_dim = config.cls_dim
         self.encoder = builder.model_builder(config.encoder)
         self.cls_head_finetune = nn.Sequential(
-                nn.Linear(1024, 256),
+                nn.Linear(1024*2, 256),
                 nn.BatchNorm1d(256),
                 nn.ReLU(inplace=True),
                 nn.Dropout(0.5),
@@ -149,7 +149,7 @@ class PointSimsiamClassifier(nn.Module):
 
     def forward(self, x, eval_encoder=False):
         b = self.encoder
-        if eval_encoder: # for linear svm
+        if eval_encoder: # for linear probing
             return b(x)
         
         c = self.cls_head_finetune

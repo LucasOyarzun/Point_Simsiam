@@ -13,12 +13,13 @@ scheduler: {
 }}
 
 dataset : {
-  train : { _base_: cfgs/dataset/ModelNet40.yaml,
+  train : { _base_: cfgs/dataset/Scan_OBJ.yaml,
             others: {subset: 'train'}},
-  val : { _base_: cfgs/dataset/ModelNet40.yaml,
+  val : { _base_: cfgs/dataset/Scan_OBJ.yaml,
             others: {subset: 'test'}},
-  test : { _base_: cfgs/dataset/ModelNet40.yaml,
+  test : { _base_: cfgs/dataset/Scan_OBJ.yaml,
             others: {subset: 'test'}}}
+
 model : {
   NAME: PointSimsiamClassifier,
   encoder: {
@@ -31,8 +32,7 @@ model : {
   cls_dim: 40,
 }
 
-
-npoints: 1024
+npoints: 2048
 total_bs : 32
 step_per_update : 1
 max_epoch : 300

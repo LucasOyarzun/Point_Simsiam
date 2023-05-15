@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.init as init
 import torch.nn.functional as F
-from .build import MODELS
+from ..build import MODELS
 
 
 def knn(x, k):
@@ -41,7 +41,8 @@ class DGCNNEncoder(nn.Module):
     def __init__(self, config):
         super(DGCNNEncoder, self).__init__()
         self.k = config.k
-        self.emb_dims = config.emb_dims
+        self.emb_dims = 1024
+        self.output_dim = self.emb_dims
 
         self.bn1 = nn.BatchNorm2d(64)
         self.bn2 = nn.BatchNorm2d(64)

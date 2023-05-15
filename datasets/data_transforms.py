@@ -1,6 +1,10 @@
 import numpy as np
 import torch
+import torch.nn as nn
 import random
+from knn_cuda import KNN
+from utils import misc
+
 
 
 class PointcloudRotate(object):
@@ -149,67 +153,26 @@ class PointCloudNoise(object):
             noise = noise.clamp(-self.clip, self.clip)
             pc[i, :, 0:3] += noise.cuda()
         return pc
-    
-from knn_cuda import KNN
-from utils import misc
-import torch
-import torch.nn as nn
 
-class Group(nn.Module):  # FPS + KNN
-    def __init__(self, num_group, group_size):
-        super().__init__()
+class PointCloudMask(object):
+    def __init__(self, num_group=32, group_size=32, mask_ratio=[0.5, 0.5]):
         self.num_group = num_group
         self.group_size = group_size
-        self.knn = KNN(k=self.group_size, transpose_mode=True)
+        self.mask_ratio = mask_ratio
+        self.knn = KNN(k=32, transpose_mode=True)
 
-    def forward(self, xyz):
-        '''
-            input: B N 3
-            ---------------------------
-            output: B G M 3
-            center : B G 3
-        '''
-        batch_size, num_points, _ = xyz.shape
-        # fps the centers out
-        center = misc.fps(xyz, self.num_group) # B G 3
-        # knn to get the neighborhood
-        _, idx = self.knn(xyz, center) # B G M
-        assert idx.size(1) == self.num_group
-        assert idx.size(2) == self.group_size
-        idx_base = torch.arange(0, batch_size, device=xyz.device).view(-1, 1, 1) * num_points
-        idx = idx + idx_base
-        idx = idx.view(-1)
-        neighborhood = xyz.view(batch_size * num_points, -1)[idx, :]
-        neighborhood = neighborhood.view(batch_size, self.num_group, self.group_size, 3).contiguous()
-        # normalize
-        neighborhood = neighborhood - center.unsqueeze(2)
-        return neighborhood, center
+    def __call__(self, pc):
+        mask_ratio = torch.tensor([random.uniform(self.mask_ratio[0], self.mask_ratio[1])], device=pc.device)
+        bsize = pc.size(0)
+        center = misc.fps(pc, self.num_group)  # B G 3
+        _, idx = self.knn(pc, center)  # B G M
 
-def mask_groups(xyz, num_group, group_size, mask_ratio):
-    group = Group(num_group, group_size)
-    neighborhood, center = group(xyz)
+        num_groups_deleted = (self.num_group * mask_ratio).long()
+        num_points_deleted = num_groups_deleted * self.group_size
+        idx_to_delete = idx[:, :num_groups_deleted].flatten(1)
 
-    bsize = xyz.size()[0]
-    n_points = neighborhood.size()[1] * neighborhood.size()[2]
+        first_point = pc[:, 0].unsqueeze(1).expand(-1, num_points_deleted, -1)
+        pc.scatter_(1, idx_to_delete.unsqueeze(2).expand(-1, -1, 3), first_point)
 
-    D = 3
+        return pc
 
-    mask_points = int(n_points * mask_ratio)
-    masked_neighborhood = neighborhood.clone()
-
-    for i in range(bsize):
-        for j in range(num_group):
-            if random.random() < 0.5:
-                continue
-            group_indices = torch.arange(j * group_size, (j+1) * group_size, device=xyz.device)
-            masked_indices = torch.randperm(group_size, device=xyz.device)[:mask_points]
-            masked_group_indices = group_indices[masked_indices]
-
-            masked_neighborhood[i, j, masked_indices, :] = torch.zeros(D, device=xyz.device)
-            masked_center = center[i, j, :].unsqueeze(0)
-            masked_centered = masked_neighborhood[i, j, :, :] - masked_center
-            masked_centered[masked_indices, :] = torch.zeros(D, device=xyz.device)
-            masked_neighborhood[i, j, :, :] = masked_centered + masked_center
-
-    masked_xyz = masked_neighborhood.view(bsize, -1, D)
-    return masked_xyz

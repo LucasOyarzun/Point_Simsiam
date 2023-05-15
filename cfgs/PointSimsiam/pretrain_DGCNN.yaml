@@ -24,7 +24,7 @@ dataset : {
             others: {subset: 'test', npoints: 1024}},
   test : { _base_: cfgs/dataset/ShapeNet-55.yaml,
             others: {subset: 'test', npoints: 1024}},
-  svm: {
+  linear_probing: {
           train: { _base_: cfgs/dataset/ModelNet40_linear_probing.yaml,
                     others: {partition: 'train', num_points: 1024}},
           val: { _base_: cfgs/dataset/ModelNet40_linear_probing.yaml,

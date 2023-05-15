@@ -18,18 +18,13 @@ dataset : {
               subset: 'train',
               npoints: 1024,
               siamese_network: True,
-              augmentations: {
-                type: "random",
-                noise_var: 0.1,
-                mask_ratio: 0.8,
-              }
             }
           },
   val : { _base_: cfgs/dataset/ShapeNet-55.yaml,
             others: {subset: 'test', npoints: 1024}},
   test : { _base_: cfgs/dataset/ShapeNet-55.yaml,
             others: {subset: 'test', npoints: 1024}},
-  svm: {
+  linear_probing: {
           train: { _base_: cfgs/dataset/ModelNet40_linear_probing.yaml,
                     others: {partition: 'train', num_points: 1024}},
           val: { _base_: cfgs/dataset/ModelNet40_linear_probing.yaml,
@@ -43,14 +38,16 @@ dataset : {
 model : {
   NAME: PointSimsiam,
   encoder: {
-    NAME: PointNetEncoder,
-    space_transform: False,
-    feature_transform: False,
+    # NAME: PointNetEncoder,
+    # space_transform: False,
+    # feature_transform: False,
+    NAME: DGCNNEncoder,
+    k: 40,
   }
 }
 
 
 npoints: 1024
-total_bs : 128
+total_bs : 64
 step_per_update : 1
 max_epoch : 300

@@ -151,7 +151,7 @@ class PointBYOLClassifier(nn.Module):
 
     def forward(self, x, eval_encoder=False):
         b = self.encoder
-        if eval_encoder: # for linear svm
+        if eval_encoder: # for linear probing
             return b(x)
         
         c = self.cls_head_finetune

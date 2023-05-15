@@ -66,7 +66,7 @@ def run_net_knn_modelnet40(args, config):
     
     for i, (data, label) in enumerate(train_dataloader_knn):
         labels = list(map(lambda x: x[0],label.numpy().tolist()))
-        data = data.cuda().contiguous()
+        data = data.cuda().permute(0, 2, 1).contiguous()
         with torch.no_grad():
             feats = base_model(data, eval_encoder=True)
         feats = feats.detach().cpu().numpy()
@@ -82,7 +82,7 @@ def run_net_knn_modelnet40(args, config):
 
     for i, (data, label) in enumerate(test_dataloader_knn):
         labels = list(map(lambda x: x[0],label.numpy().tolist()))
-        data = data.cuda().contiguous()
+        data = data.cuda().permute(0, 2, 1).contiguous()
         with torch.no_grad():
             feats = base_model(data, eval_encoder=True)
         feats = feats.detach().cpu().numpy()

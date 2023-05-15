@@ -5,7 +5,6 @@ import torch.utils.data as data
 from .io import IO
 from .build import DATASETS
 from utils.logger import *
-from .siamese_augmentation import siamese_augmentation
 
 @DATASETS.register_module()
 class ShapeNet(data.Dataset):
@@ -66,14 +65,14 @@ class ShapeNet(data.Dataset):
         data = self.random_sample(data, self.sample_points_num)
         data = self.pc_norm(data)
 
-        if self.config.siamese_network:
-            data1, data2 = siamese_augmentation(data, self.config)
-            data1 = torch.from_numpy(data1).float()
-            data2 = torch.from_numpy(data2).float()
-            return sample['taxonomy_id'], sample['model_id'], [data1, data2]
-        else:
-            data = torch.from_numpy(data).float()
-            return sample['taxonomy_id'], sample['model_id'], data
+        # if self.config.siamese_network:
+        #     data1, data2 = siamese_augmentation(data, self.config)
+        #     data1 = torch.from_numpy(data1).float()
+        #     data2 = torch.from_numpy(data2).float()
+        #     return sample['taxonomy_id'], sample['model_id'], [data1, data2]
+        # else:
+        data = torch.from_numpy(data).float()
+        return sample['taxonomy_id'], sample['model_id'], data
 
     def __len__(self):
         return len(self.file_list)

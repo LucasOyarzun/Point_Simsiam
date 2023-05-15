@@ -24,6 +24,8 @@ model : {
     NAME: PointNetEncoder,
     space_transform: False,
     feature_transform: False,
+    # NAME: DGCNNEncoder,
+    # k: 40,
   },
   cls_dim: 40,
 }

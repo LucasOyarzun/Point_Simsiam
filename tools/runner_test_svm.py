@@ -42,8 +42,6 @@ def run_net_svm_modelnet40(args, config):
     if args.use_gpu:
         base_model.to(args.local_rank)
 
-    # from IPython import embed; embed()
-    
     # load ckpts
     base_model.load_model_from_ckpt(args.ckpts)
     
@@ -66,7 +64,7 @@ def run_net_svm_modelnet40(args, config):
     
     for i, (data, label) in enumerate(train_dataloader_svm):
         labels = list(map(lambda x: x[0],label.numpy().tolist()))
-        data = data.cuda().contiguous()
+        data = data.cuda().permute(0, 2, 1).contiguous()
         with torch.no_grad():
             feats = base_model(data, eval_encoder=True)
         feats = feats.detach().cpu().numpy()
@@ -82,7 +80,7 @@ def run_net_svm_modelnet40(args, config):
 
     for i, (data, label) in enumerate(test_dataloader_svm):
         labels = list(map(lambda x: x[0],label.numpy().tolist()))
-        data = data.cuda().contiguous()
+        data = data.cuda().permute(0, 2, 1).contiguous()
         with torch.no_grad():
             feats = base_model(data, eval_encoder=True)
         feats = feats.detach().cpu().numpy()
@@ -137,6 +135,7 @@ def run_net_svm_scan(args, config):
         labels = list(map(lambda x: x, label.numpy().tolist()))
         # .detach().cpu().numpy().tolist()
         data = points.cuda().contiguous()
+        
         with torch.no_grad():
             feats = base_model(data, eval_encoder=True)
         feats = feats.detach().cpu().numpy()

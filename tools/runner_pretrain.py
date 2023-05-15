@@ -22,9 +22,8 @@ train_transforms = transforms.Compose(
         data_transforms.PointcloudRotate(),
         data_transforms.PointcloudTranslate(),
         data_transforms.PointcloudJitter(),
-        data_transforms.PointcloudRandomInputDropout(),
         data_transforms.PointcloudScaleAndTranslate(),
-
+        data_transforms.PointCloudMask(mask_ratio=[0.5, 0.8]),
     ]
 )
 
@@ -120,38 +119,50 @@ def run_net(args, config, train_writer=None, val_writer=None):
             dataset_name = config.dataset.train._base_.NAME
 
             # Siamese networks requires two different data augmentations
+            # if config.dataset.train.others.siamese_network:
+            #     [ data1, data2 ] = data
+            #     if dataset_name == 'ShapeNet':
+            #         # if load_clouds <= 4:
+            #         #     img_id = random.randint(0, data1.size(0) - 1)
+            #         #     with open("data/ShapeNet55-34/Shapenet_classes.json") as classes_file:
+            #         #         classes = json.load(classes_file)
+            #         #         vis_pc(vis, data1[img_id], f"{classes[taxonomy_ids[img_id]]}[{img_id}] - 1")
+            #         #         vis_pc(vis, data2[img_id], f"{classes[taxonomy_ids[img_id]]}[{img_id}] - 2")
+            #         load_clouds += 1
+            #         data1 = data1.cuda()
+            #         data2 = data2.cuda()
+            #     else:
+            #         raise NotImplementedError(f'Train phase do not support {dataset_name} for siamese networks')
+            #     assert data1.size(1) == npoints
+            #     assert data2.size(1) == npoints
+            #     data1 = train_transforms(data1)
+            #     data2 = train_transforms(data2)
+            #     loss = base_model(data1, data2)
+                
+            # # Other kinds of networks only require one sample with data augmentation
+            # else:
+            if dataset_name == 'ShapeNet':
+                points = data.cuda()
+                
+            elif dataset_name == 'ModelNet':
+                points = data[0].cuda()
+                points = misc.fps(points, npoints)
+            else:
+                raise NotImplementedError(f'Train phase do not support {dataset_name}')
+            assert points.size(1) == npoints
+
             if config.dataset.train.others.siamese_network:
-                [ data1, data2 ] = data
-                if dataset_name == 'ShapeNet':
-                    # if load_clouds <= 4:
-                    #     img_id = random.randint(0, data1.size(0) - 1)
-                    #     with open("data/ShapeNet55-34/Shapenet_classes.json") as classes_file:
-                    #         classes = json.load(classes_file)
-                    #         vis_pc(vis, data1[img_id], f"{classes[taxonomy_ids[img_id]]}[{img_id}] - 1")
-                    #         vis_pc(vis, data2[img_id], f"{classes[taxonomy_ids[img_id]]}[{img_id}] - 2")
-                    load_clouds += 1
-                    data1 = data1.cuda()
-                    data2 = data2.cuda()
-                else:
-                    raise NotImplementedError(f'Train phase do not support {dataset_name} for siamese networks')
+                data1 = points.clone()
+                data1 = train_transforms(data1)
+                data2 = train_transforms(points)
                 assert data1.size(1) == npoints
                 assert data2.size(1) == npoints
-                data1 = train_transforms(data1)
-                data2 = train_transforms(data2)
+                data1 = data1.permute(0, 2, 1)
+                data2 = data2.permute(0, 2, 1)
                 loss = base_model(data1, data2)
-                
-            # Other kinds of networks only require one sample with data augmentation
             else:
-                if dataset_name == 'ShapeNet':
-                    points = data.cuda()
-                elif dataset_name == 'ModelNet':
-                    points = data[0].cuda()
-                    points = misc.fps(points, npoints)
-                else:
-                    raise NotImplementedError(f'Train phase do not support {dataset_name}')
-                assert points.size(1) == npoints
-
                 points = train_transforms(points)
+                points = points.permute(0, 2, 1)
                 loss = base_model(points)
 
             try:

@@ -32,7 +32,6 @@ class PointNetEncoder(nn.Module):
 
     def forward(self, x):
         n_pts = x.size()[1]
-        x = x.transpose(2, 1)
         if self.space_transform:
             trans = self.stn(x)
             x = x.transpose(2, 1)

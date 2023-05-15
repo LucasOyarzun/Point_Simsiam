@@ -252,7 +252,7 @@ class Point_M2AE(nn.Module):
 
         # hierarchical encoder
         if eval_encoder:
-            # for linear svm
+            # for linear probing
             x_vis_list, mask_vis_list, _ = self.h_encoder(neighborhoods, centers, idxs, eval_encoder=True)
             x_vis = x_vis_list[-1]
             return x_vis.mean(1) + x_vis.max(1)[0]

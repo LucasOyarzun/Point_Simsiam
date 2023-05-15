@@ -13,24 +13,24 @@ scheduler: {
 }}
 
 dataset : {
-  train : { _base_: cfgs/dataset_configs/ScanObjectNN_hardest.yaml,
+  train : { _base_: cfgs/dataset/Scan_OBJ-BG.yaml,
             others: {subset: 'train'}},
-  val : { _base_: cfgs/dataset_configs/ScanObjectNN_hardest.yaml,
+  val : { _base_: cfgs/dataset/Scan_OBJ-BG.yaml,
             others: {subset: 'test'}},
-  test : { _base_: cfgs/dataset_configs/ScanObjectNN_hardest.yaml,
+  test : { _base_: cfgs/dataset/Scan_OBJ-BG.yaml,
             others: {subset: 'test'}}}
-model : {
-  NAME: PointTransformer,
-  trans_dim: 384,
-  depth: 12,
-  drop_path_rate: 0.1,
-  cls_dim: 15,
-  num_heads: 6,
-  group_size: 32,
-  num_group: 128,
-  encoder_dims: 384,
-}
 
+model : {
+  NAME: PointSimsiamClassifier,
+  encoder: {
+    # NAME: PointNetEncoder,
+    # space_transform: False,
+    # feature_transform: False,
+    NAME: DGCNNEncoder,
+    k: 40,
+  },
+  cls_dim: 40,
+}
 
 npoints: 2048
 total_bs : 32

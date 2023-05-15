@@ -359,13 +359,14 @@ def test(base_model, test_dataloader, args, config, logger = None):
 
         acc = (test_pred == test_label).sum() / float(test_label.size(0)) * 100.
         print_log('[TEST] acc = %.4f' % acc, logger=logger)
-        
+        if args.vote == False:
+            return
         if args.distributed:
             torch.cuda.synchronize()
 
         print_log(f"[TEST_VOTE]", logger = logger)
         acc = 0.
-        for time in range(1, 300):
+        for time in range(1, 50):
             this_acc = test_vote(base_model, test_dataloader, 1, None, args, config, logger=logger, times=10)
             if acc < this_acc:
                 acc = this_acc

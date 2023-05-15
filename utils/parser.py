@@ -34,11 +34,6 @@ def get_args():
     parser.add_argument('--ckpts', type = str, default=None, help = 'test used ckpt path')
     parser.add_argument('--val_freq', type = int, default=1, help = 'test freq')
     parser.add_argument(
-        '--vote',
-        action='store_true',
-        default=False,
-        help = 'vote acc')
-    parser.add_argument(
         '--resume', 
         action='store_true', 
         default=False, 
@@ -48,6 +43,11 @@ def get_args():
         action='store_true', 
         default=False, 
         help = 'test mode for certain ckpt')
+    parser.add_argument(
+        '--vote',
+        action='store_true',
+        default=False,
+        help = 'vote acc')
     parser.add_argument(
         '--test_svm', 
         choices=['modelnet40', 'scan'],
@@ -114,6 +114,8 @@ def get_args():
 
     if args.test:
         args.exp_name = 'test_' + args.exp_name
+        if args.vote:
+            args.exp_name = 'test_voting_' + args.exp_name
     elif args.test_svm is not None:
         args.exp_name = 'test_svm_' + args.test_svm + '_' + args.exp_name
     elif args.test_knn is not None:

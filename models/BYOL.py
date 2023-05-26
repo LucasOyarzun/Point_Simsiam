@@ -89,7 +89,7 @@ class PointBYOLClassifier(nn.Module):
         self.cls_dim = config.cls_dim
         self.encoder = builder.model_builder(config.encoder._base_)
         self.cls_head_finetune = nn.Sequential(
-                nn.Linear(1024, 256),
+                nn.Linear(self.encoder.output_dim, 256),
                 nn.BatchNorm1d(256),
                 nn.ReLU(inplace=True),
                 nn.Dropout(0.5),

@@ -1,16 +1,13 @@
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-import timm
 from timm.models.layers import DropPath, trunc_normal_
 import numpy as np
-from .build import MODELS
+from ..build import MODELS
 from utils import misc
 from utils.checkpoint import get_missing_parameters_message, get_unexpected_parameters_message
 from utils.logger import *
 import random
 from knn_cuda import KNN
-from extensions.chamfer_dist import ChamferDistanceL1, ChamferDistanceL2
 
 
 class Encoder(nn.Module):   ## Embedding module

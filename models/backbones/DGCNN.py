@@ -42,7 +42,7 @@ class DGCNNEncoder(nn.Module):
         super(DGCNNEncoder, self).__init__()
         self.k = config.k
         self.emb_dims = 1024
-        self.output_dim = self.emb_dims
+        self.output_dim = self.emb_dims * 2
 
         self.bn1 = nn.BatchNorm2d(64)
         self.bn2 = nn.BatchNorm2d(64)

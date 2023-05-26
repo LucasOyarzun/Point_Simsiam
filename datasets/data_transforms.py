@@ -175,4 +175,3 @@ class PointCloudMask(object):
         pc.scatter_(1, idx_to_delete.unsqueeze(2).expand(-1, -1, 3), first_point)
 
         return pc
-

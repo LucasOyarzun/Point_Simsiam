@@ -48,19 +48,19 @@ class PointBYOL(nn.Module):
     def __init__(self, config):
         super().__init__()
 
-        self.encoder = builder.model_builder(config.encoder)
+        self.encoder = builder.model_builder(config.encoder._base_)
         self.projector = projection_MLP(self.encoder.output_dim)
         self.online_encoder = nn.Sequential(self.encoder, self.projector)
         self.online_predictor = prediction_MLP()
-        self.target_encoder = nn.Sequential(self.encoder, self.projector)
+        self.target_encoder = copy.deepcopy(self.online_encoder)
 
     @classmethod
-    def target_ema(cls, k, K, tau_base=0.996):
-        return 1 - tau_base * (cos(pi*k/K)+1)/2 
+    def target_ema(cls, k, K, base_ema=4e-3):
+        return 1 - base_ema * (cos(pi*k/K)+1)/2 
 
+    @torch.no_grad()
     def update_moving_average(self, global_step, max_steps):
         tau = self.target_ema(global_step, max_steps)
-        self.target_encoder.eval()
         for online, target in zip(self.online_encoder.parameters(), self.target_encoder.parameters()):
             target.data = tau * target.data + (1 - tau) * online.data
 
@@ -87,7 +87,7 @@ class PointBYOLClassifier(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.cls_dim = config.cls_dim
-        self.encoder = builder.model_builder(config.encoder)
+        self.encoder = builder.model_builder(config.encoder._base_)
         self.cls_head_finetune = nn.Sequential(
                 nn.Linear(1024, 256),
                 nn.BatchNorm1d(256),

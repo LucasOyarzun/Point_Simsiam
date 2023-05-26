@@ -25,7 +25,7 @@ class projection_MLP(nn.Module):
     def __init__(self, in_dim, hidden_dim=2048, out_dim=2048):
         super().__init__()
         self.layer1 = nn.Sequential(
-            nn.Linear(in_dim*2, hidden_dim),
+            nn.Linear(in_dim, hidden_dim),
             nn.BatchNorm1d(hidden_dim),
             nn.ReLU(inplace=True),
         )
@@ -66,18 +66,16 @@ class PointSimsiam(nn.Module):
     def __init__(self, config):
         super().__init__()
 
-        self.encoder = builder.model_builder(config.encoder)
+        self.encoder = builder.model_builder(config.encoder._base_)
         self.projector = projection_MLP(self.encoder.output_dim)
         self.predictor = prediction_MLP()
 
     def forward(self, x1, x2):
-
         f, h = nn.Sequential(self.encoder, self.projector), self.predictor
         z1, z2 = f(x1), f(x2)
         p1, p2 = h(z1), h(z2)
         loss = D(p1, z2) / 2 + D(p2, z1) / 2
         return loss
-
 
 # finetune model
 @MODELS.register_module()
@@ -85,9 +83,9 @@ class PointSimsiamClassifier(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.cls_dim = config.cls_dim
-        self.encoder = builder.model_builder(config.encoder)
+        self.encoder = builder.model_builder(config.encoder._base_)
         self.cls_head_finetune = nn.Sequential(
-                nn.Linear(1024*2, 256),
+                nn.Linear(self.encoder.output_dim, 256),
                 nn.BatchNorm1d(256),
                 nn.ReLU(inplace=True),
                 nn.Dropout(0.5),

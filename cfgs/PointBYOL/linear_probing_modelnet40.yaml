@@ -22,11 +22,10 @@ model : {
   NAME: PointBYOLClassifier,
   cls_dim: 40,
   encoder: {
-    NAME: PointNetEncoder,
-    space_transform: False,
-    feature_transform: False,
-  },
+    _base_: cfgs/encoder/PointNet.yaml,
+  }
 }
 
 total_bs: 128
-step_per_update:
+step_per_update: 1
+max_epoch: 300

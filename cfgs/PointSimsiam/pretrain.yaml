@@ -38,11 +38,8 @@ dataset : {
 model : {
   NAME: PointSimsiam,
   encoder: {
-    # NAME: PointNetEncoder,
-    # space_transform: False,
-    # feature_transform: False,
-    NAME: DGCNNEncoder,
-    k: 40,
+    _base_: cfgs/encoder/PointMLP.yaml,
+    npoints: 1024
   }
 }
 

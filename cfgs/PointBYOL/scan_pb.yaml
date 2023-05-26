@@ -13,27 +13,22 @@ scheduler: {
 }}
 
 dataset : {
-  train : { _base_: cfgs/dataset_configs/ModelNet40.yaml,
+  train : { _base_: cfgs/dataset/Scan_PB.yaml,
             others: {subset: 'train'}},
-  val : { _base_: cfgs/dataset_configs/ModelNet40.yaml,
+  val : { _base_: cfgs/dataset/Scan_PB.yaml,
             others: {subset: 'test'}},
-  test : { _base_: cfgs/dataset_configs/ModelNet40.yaml,
+  test : { _base_: cfgs/dataset/Scan_PB.yaml,
             others: {subset: 'test'}}}
-            
+
 model : {
-  NAME: PointTransformer,
-  trans_dim: 384,
-  depth: 12,
-  drop_path_rate: 0.1,
+  NAME: PointBYOLClassifier,
   cls_dim: 40,
-  num_heads: 6,
-  group_size: 32,
-  num_group: 512,
-  encoder_dims: 384,
+  encoder: {
+    _base_: cfgs/encoder/PointNet.yaml,
+  }
 }
 
-
-npoints: 8192
+npoints: 2048
 total_bs : 32
 step_per_update : 1
 max_epoch : 300

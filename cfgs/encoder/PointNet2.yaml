@@ -1,0 +1,3 @@
+NAME: PointNet2Encoder
+space_transform: False
+feature_transform: False

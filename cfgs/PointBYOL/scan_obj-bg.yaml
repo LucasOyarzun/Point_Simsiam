@@ -24,7 +24,7 @@ model : {
   NAME: PointBYOLClassifier,
   cls_dim: 40,
   encoder: {
-    _base_: cfgs/encoder/PointNet.yaml,
+    _base_: cfgs/encoder/PointMLP.yaml,
   }
 }
 

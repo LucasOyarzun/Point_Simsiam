@@ -115,7 +115,7 @@ def get_args():
     if args.test:
         args.exp_name = 'test_' + args.exp_name
         if args.vote:
-            args.exp_name = 'test_voting_' + args.exp_name
+            args.exp_name = 'voting_' + args.exp_name
     elif args.test_svm is not None:
         args.exp_name = 'test_svm_' + args.test_svm + '_' + args.exp_name
     elif args.test_knn is not None:

@@ -38,13 +38,12 @@ dataset : {
 model : {
   NAME: PointSimsiam,
   encoder: {
-    _base_: cfgs/encoder/PointMLP.yaml,
-    npoints: 1024
+    _base_: cfgs/encoder/PointTransformer.yaml,
   }
 }
 
 
 npoints: 1024
-total_bs : 64
+total_bs : 128
 step_per_update : 1
 max_epoch : 300

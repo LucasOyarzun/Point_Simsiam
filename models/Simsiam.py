@@ -110,7 +110,7 @@ class PointSimsiamClassifier(nn.Module):
     def load_model_from_ckpt(self, ckpt_path):
         if ckpt_path is not None:
             ckpt = torch.load(ckpt_path)
-            base_ckpt = {k.replace("module.", ""): v for k, v in ckpt['base_model'].items()}
+            base_ckpt = {k.replace("module.", "").replace("MaskTransformer.", ""): v for k, v in ckpt['base_model'].items()}
 
             incompatible = self.load_state_dict(base_ckpt, strict=False)
 

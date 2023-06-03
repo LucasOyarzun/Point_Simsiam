@@ -1,7 +1,7 @@
 NAME: PointTransformerMaskedEncoder
-group_size: 32,
-num_group: 64,
-loss: cdl2,
+group_size: 32
+num_group: 64
+loss: cdl2
 transformer_config: {
   mask_ratio: 0.6,
   mask_type: 'rand',
@@ -12,4 +12,4 @@ transformer_config: {
   num_heads: 6,
   decoder_depth: 4,
   decoder_num_heads: 6,
-},
+}

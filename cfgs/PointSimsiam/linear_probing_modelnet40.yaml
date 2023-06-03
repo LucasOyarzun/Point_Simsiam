@@ -22,7 +22,7 @@ model : {
   NAME: PointSimsiamClassifier,
   cls_dim: 40,
   encoder: {
-    _base_: cfgs/encoder/PointMLP.yaml,
+    _base_: cfgs/encoder/PointTransformer.yaml,
   }
 }
 

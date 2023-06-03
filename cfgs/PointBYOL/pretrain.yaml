@@ -38,7 +38,7 @@ dataset : {
 model : {
   NAME: PointBYOL,
   encoder: {
-    _base_: cfgs/encoder/DGCNN.yaml,
+    _base_: cfgs/encoder/PointMLP.yaml,
   }
 }
 

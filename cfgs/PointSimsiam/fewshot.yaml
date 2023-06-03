@@ -22,10 +22,10 @@ dataset : {
             others: {subset: 'test'}}}
 model : {
   NAME: PointSimsiamClassifier,
-  encoder: {
-    _base_: cfgs/encoder/DGCNN.yaml,
-  },
   cls_dim: 40,
+  encoder: {
+    _base_: cfgs/encoder/PointTransformer.yaml,
+  }
 }
 
 npoints: 1024

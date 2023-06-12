@@ -371,7 +371,7 @@ class PointTransformerMaskedEncoder(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.config = config
-        self.output_dim = 768  #
+        self.output_dim = 384  #
         self.trans_dim = config.transformer_config.trans_dim
         self.MaskTransformer = MaskTransformer(config)
         self.group_size = config.group_size
@@ -401,8 +401,8 @@ class PointTransformerMaskedEncoder(nn.Module):
         # pos_full = torch.cat([pos_emd_vis, pos_emd_mask], dim=1)
         # #max_pooled, _ = torch.max((x_full + pos_full), dim=1)
 
-        concat = torch.cat([x_vis, pos_emd_vis], dim=2)
-        max_pooled, _ = torch.max(concat, dim=1)
+        vis_vector = x_vis + pos_emd_vis
+        max_pooled, _ = torch.max(vis_vector, dim=1)
         return max_pooled
 
 

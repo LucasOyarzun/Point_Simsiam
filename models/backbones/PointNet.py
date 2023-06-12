@@ -2,13 +2,13 @@ import torch
 import torch.nn as nn
 import torch.nn.parallel
 import torch.utils.data
-from torch.autograd import Variable
-import numpy as np
 import torch.nn.functional as F
 from utils.checkpoint import get_missing_parameters_message, get_unexpected_parameters_message
 from utils.logger import *
+from timm.models.layers import trunc_normal_
 from ..build import MODELS
 from .pointnet_utils import STN3d, STNkd
+from tools import builder
 
 @MODELS.register_module()
 class PointNetEncoder(nn.Module):
@@ -58,26 +58,40 @@ class PointNetEncoder(nn.Module):
             x = x.view(-1, 1024, 1).repeat(1, 1, n_pts)
             return torch.cat([x, pointfeat], 1), trans, trans_feat
 
+# finetune model
 @MODELS.register_module()
 class PointNetCls(nn.Module):
     def __init__(self, config):
-        super(PointNetCls, self).__init__()
+        super().__init__()
         self.cls_dim = config.cls_dim
-        self.encoder = PointNetEncoder(config.encoder, global_feat=True)
-        self.fc1 = nn.Linear(1024, 512)
-        self.fc2 = nn.Linear(512, 256)
-        self.fc3 = nn.Linear(256, self.cls_dim)
-        self.dropout = nn.Dropout(p=0.3)
-        self.bn1 = nn.BatchNorm1d(512)
-        self.bn2 = nn.BatchNorm1d(256)
-        self.relu = nn.ReLU()
-
+        self.encoder = builder.model_builder(config.encoder._base_)
+        self.cls_head_finetune = nn.Sequential(
+                nn.Linear(self.encoder.output_dim, 256),
+                nn.BatchNorm1d(256),
+                nn.ReLU(inplace=True),
+                nn.Dropout(0.5),
+                nn.Linear(256, 256),
+                nn.BatchNorm1d(256),
+                nn.ReLU(inplace=True),
+                nn.Dropout(0.5),
+                nn.Linear(256, self.cls_dim)
+            )
+        
         self.build_loss_func()
+        
+    def build_loss_func(self):
+        self.loss_ce = nn.CrossEntropyLoss()
+
+    def get_loss_acc(self, ret, gt):
+        loss = self.loss_ce(ret, gt.long())
+        pred = ret.argmax(-1)
+        acc = (pred == gt).sum() / float(gt.size(0))
+        return loss, acc * 100
 
     def load_model_from_ckpt(self, ckpt_path):
         if ckpt_path is not None:
             ckpt = torch.load(ckpt_path)
-            base_ckpt = {k.replace("module.", ""): v for k, v in ckpt['base_model'].items()}
+            base_ckpt = {k.replace("module.", "").replace("MaskTransformer.", ""): v for k, v in ckpt['base_model'].items()}
 
             incompatible = self.load_state_dict(base_ckpt, strict=False)
 
@@ -96,21 +110,26 @@ class PointNetCls(nn.Module):
         else:
             print_log('Training from scratch!!!', logger='Classifier')
             self.apply(self._init_weights)
-    def build_loss_func(self):
-        self.loss_ce = F.nll_loss
 
-    def get_loss_acc(self, ret, gt):
-        loss = self.loss_ce(ret, gt.long())
-        pred = ret.argmax(-1)
-        acc = (pred == gt).sum() / float(gt.size(0))
-        return loss, acc * 100
+    def _init_weights(self, m):
+        if isinstance(m, nn.Linear):
+            trunc_normal_(m.weight, std=.02)
+            if isinstance(m, nn.Linear) and m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.LayerNorm):
+            nn.init.constant_(m.bias, 0)
+            nn.init.constant_(m.weight, 1.0)
+        elif isinstance(m, nn.Conv1d):
+            trunc_normal_(m.weight, std=.02)
+            if m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+                
 
     def forward(self, x):
-        x = self.encoder(x)
-        x = F.relu(self.bn1(self.fc1(x)))
-        x = F.relu(self.bn2(self.dropout(self.fc2(x))))
-        x = self.fc3(x)
-        return F.log_softmax(x, dim=1)
+        b = self.encoder
+        c = self.cls_head_finetune
+        z = nn.Sequential(b, c)(x)
+        return z
 
 
 class PointNetSemSeg(nn.Module):

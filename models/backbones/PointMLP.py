@@ -2,7 +2,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from pointnet2_ops import pointnet2_utils
+from utils.logger import *
+from timm.models.layers import trunc_normal_
+from utils.checkpoint import get_missing_parameters_message, get_unexpected_parameters_message
 from ..build import MODELS
+from tools import builder
 
 def get_activation(activation):
     if activation.lower() == 'gelu':
@@ -338,3 +342,77 @@ class PointMLPEncoder(nn.Module):
 
         x = F.adaptive_max_pool1d(x, 1).squeeze(dim=-1)
         return x
+
+
+# finetune model
+@MODELS.register_module()
+class PointMLPCls(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.cls_dim = config.cls_dim
+        self.encoder = builder.model_builder(config.encoder._base_)
+        self.cls_head_finetune = nn.Sequential(
+                nn.Linear(self.encoder.output_dim, 256),
+                nn.BatchNorm1d(256),
+                nn.ReLU(inplace=True),
+                nn.Dropout(0.5),
+                nn.Linear(256, 256),
+                nn.BatchNorm1d(256),
+                nn.ReLU(inplace=True),
+                nn.Dropout(0.5),
+                nn.Linear(256, self.cls_dim)
+            )
+        
+        self.build_loss_func()
+        
+    def build_loss_func(self):
+        self.loss_ce = nn.CrossEntropyLoss()
+
+    def get_loss_acc(self, ret, gt):
+        loss = self.loss_ce(ret, gt.long())
+        pred = ret.argmax(-1)
+        acc = (pred == gt).sum() / float(gt.size(0))
+        return loss, acc * 100
+
+    def load_model_from_ckpt(self, ckpt_path):
+        if ckpt_path is not None:
+            ckpt = torch.load(ckpt_path)
+            base_ckpt = {k.replace("module.", "").replace("MaskTransformer.", ""): v for k, v in ckpt['base_model'].items()}
+
+            incompatible = self.load_state_dict(base_ckpt, strict=False)
+
+            if incompatible.missing_keys:
+                print_log('missing_keys', logger='Classifier')
+                print_log(
+                    get_missing_parameters_message(incompatible.missing_keys),
+                    logger='Classifier'
+                )
+            if incompatible.unexpected_keys:
+                print_log('unexpected_keys', logger='Classifier')
+                print_log(
+                    get_unexpected_parameters_message(incompatible.unexpected_keys),
+                    logger='Classifier'
+                )
+        else:
+            print_log('Training from scratch!!!', logger='Classifier')
+            self.apply(self._init_weights)
+
+    def _init_weights(self, m):
+        if isinstance(m, nn.Linear):
+            trunc_normal_(m.weight, std=.02)
+            if isinstance(m, nn.Linear) and m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.LayerNorm):
+            nn.init.constant_(m.bias, 0)
+            nn.init.constant_(m.weight, 1.0)
+        elif isinstance(m, nn.Conv1d):
+            trunc_normal_(m.weight, std=.02)
+            if m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+                
+
+    def forward(self, x):
+        b = self.encoder
+        c = self.cls_head_finetune
+        z = nn.Sequential(b, c)(x)
+        return z

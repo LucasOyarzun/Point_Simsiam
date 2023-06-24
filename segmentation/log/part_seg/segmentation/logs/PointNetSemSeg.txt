@@ -1,0 +1,52 @@
+2023-06-23 21:14:37,323 - Model - INFO - PARAMETER ...
+2023-06-23 21:14:37,323 - Model - INFO - Namespace(model='PointNetSemSeg', batch_size=16, epoch=300, warmup_epoch=10, learning_rate=0.0002, gpu='0', log_dir='segmentation', npoint=2048, normal=False, ckpts='../experiments/pretrain/PointSimsiam/simsiam_pointnet_linear_mask_05_08/ckpt-last.pth', root='../data/shapenetcore_partanno_segmentation_benchmark_v0_normal/')
+2023-06-23 21:15:17,397 - Model - INFO - PARAMETER ...
+2023-06-23 21:15:17,397 - Model - INFO - Namespace(model='PointNetSemSeg', batch_size=16, epoch=300, warmup_epoch=10, learning_rate=0.0002, gpu='0', log_dir='segmentation', npoint=2048, normal=False, ckpts='../experiments/pretrain/PointSimsiam/simsiam_pointnet_linear_mask_05_08/ckpt-last.pth', root='../data/shapenetcore_partanno_segmentation_benchmark_v0_normal/')
+2023-06-23 21:15:17,483 - Model - INFO - The number of training data is: 13998
+2023-06-23 21:15:17,483 - Model - INFO - The number of test data is: 2874
+2023-06-23 21:15:51,370 - Model - INFO - PARAMETER ...
+2023-06-23 21:15:51,370 - Model - INFO - Namespace(model='PointNetSemSeg', batch_size=16, epoch=300, warmup_epoch=10, learning_rate=0.0002, gpu='0', log_dir='segmentation', npoint=2048, normal=False, ckpts='../experiments/pretrain/PointSimsiam/simsiam_pointnet_linear_mask_05_08/ckpt-last.pth', root='../data/shapenetcore_partanno_segmentation_benchmark_v0_normal/')
+2023-06-23 21:15:51,456 - Model - INFO - The number of training data is: 13998
+2023-06-23 21:15:51,456 - Model - INFO - The number of test data is: 2874
+2023-06-23 21:16:03,410 - Model - INFO - PARAMETER ...
+2023-06-23 21:16:03,410 - Model - INFO - Namespace(model='PointNetSemSeg', batch_size=16, epoch=300, warmup_epoch=10, learning_rate=0.0002, gpu='0', log_dir='segmentation', npoint=2048, normal=False, ckpts='../experiments/pretrain/PointSimsiam/simsiam_pointnet_linear_mask_05_08/ckpt-last.pth', root='../data/shapenetcore_partanno_segmentation_benchmark_v0_normal/')
+2023-06-23 21:16:03,496 - Model - INFO - The number of training data is: 13998
+2023-06-23 21:16:03,496 - Model - INFO - The number of test data is: 2874
+2023-06-23 21:16:13,766 - Model - INFO - PARAMETER ...
+2023-06-23 21:16:13,767 - Model - INFO - Namespace(model='PointNetSemSeg', batch_size=16, epoch=300, warmup_epoch=10, learning_rate=0.0002, gpu='0', log_dir='segmentation', npoint=2048, normal=False, ckpts='../experiments/pretrain/PointSimsiam/simsiam_pointnet_linear_mask_05_08/ckpt-last.pth', root='../data/shapenetcore_partanno_segmentation_benchmark_v0_normal/')
+2023-06-23 21:16:13,853 - Model - INFO - The number of training data is: 13998
+2023-06-23 21:16:13,853 - Model - INFO - The number of test data is: 2874
+2023-06-23 21:16:31,166 - Model - INFO - PARAMETER ...
+2023-06-23 21:16:31,166 - Model - INFO - Namespace(model='PointNetSemSeg', batch_size=16, epoch=300, warmup_epoch=10, learning_rate=0.0002, gpu='0', log_dir='segmentation', npoint=2048, normal=False, ckpts='../experiments/pretrain/PointSimsiam/simsiam_pointnet_linear_mask_05_08/ckpt-last.pth', root='../data/shapenetcore_partanno_segmentation_benchmark_v0_normal/')
+2023-06-23 21:16:31,254 - Model - INFO - The number of training data is: 13998
+2023-06-23 21:16:31,254 - Model - INFO - The number of test data is: 2874
+2023-06-23 21:21:59,372 - Model - INFO - PARAMETER ...
+2023-06-23 21:21:59,372 - Model - INFO - Namespace(model='PointNetSemSeg', batch_size=16, epoch=300, warmup_epoch=10, learning_rate=0.0002, log_dir='segmentation', npoint=2048, normal=False, ckpts='../experiments/pretrain/PointSimsiam/simsiam_pointnet_linear_mask_05_08/ckpt-last.pth', root='../data/shapenetcore_partanno_segmentation_benchmark_v0_normal/')
+2023-06-23 21:21:59,459 - Model - INFO - The number of training data is: 13998
+2023-06-23 21:21:59,459 - Model - INFO - The number of test data is: 2874
+2023-06-23 21:22:49,747 - Model - INFO - PARAMETER ...
+2023-06-23 21:22:49,747 - Model - INFO - Namespace(model='PointNetSemSeg', batch_size=16, epoch=300, warmup_epoch=10, learning_rate=0.0002, log_dir='segmentation', npoint=2048, normal=False, ckpts='../experiments/pretrain/PointSimsiam/simsiam_pointnet_linear_mask_05_08/ckpt-last.pth', root='../data/shapenetcore_partanno_segmentation_benchmark_v0_normal/')
+2023-06-23 21:22:49,835 - Model - INFO - The number of training data is: 13998
+2023-06-23 21:22:49,835 - Model - INFO - The number of test data is: 2874
+2023-06-23 21:23:03,296 - Model - INFO - PARAMETER ...
+2023-06-23 21:23:03,296 - Model - INFO - Namespace(model='PointNetSemSeg', batch_size=16, epoch=300, warmup_epoch=10, learning_rate=0.0002, log_dir='segmentation', npoint=2048, normal=False, ckpts='../experiments/pretrain/PointSimsiam/simsiam_pointnet_linear_mask_05_08/ckpt-last.pth', root='../data/shapenetcore_partanno_segmentation_benchmark_v0_normal/')
+2023-06-23 21:23:03,383 - Model - INFO - The number of training data is: 13998
+2023-06-23 21:23:03,383 - Model - INFO - The number of test data is: 2874
+2023-06-23 21:23:34,281 - Model - INFO - PARAMETER ...
+2023-06-23 21:23:34,281 - Model - INFO - Namespace(model='PointNetSemSeg', batch_size=16, epoch=300, warmup_epoch=10, learning_rate=0.0002, log_dir='segmentation', npoint=2048, normal=False, ckpts='../experiments/pretrain/PointSimsiam/simsiam_pointnet_linear_mask_05_08/ckpt-last.pth', root='../data/shapenetcore_partanno_segmentation_benchmark_v0_normal/')
+2023-06-23 21:23:34,368 - Model - INFO - The number of training data is: 13998
+2023-06-23 21:23:34,368 - Model - INFO - The number of test data is: 2874
+2023-06-23 21:24:00,195 - Model - INFO - PARAMETER ...
+2023-06-23 21:24:00,195 - Model - INFO - Namespace(model='PointNetSemSeg', batch_size=16, epoch=300, warmup_epoch=10, learning_rate=0.0002, log_dir='segmentation', npoint=2048, normal=False, ckpts='../experiments/pretrain/PointSimsiam/simsiam_pointnet_linear_mask_05_08/ckpt-last.pth', root='../data/shapenetcore_partanno_segmentation_benchmark_v0_normal/')
+2023-06-23 21:24:00,283 - Model - INFO - The number of training data is: 13998
+2023-06-23 21:24:00,283 - Model - INFO - The number of test data is: 2874
+2023-06-23 21:26:12,492 - Model - INFO - PARAMETER ...
+2023-06-23 21:26:12,492 - Model - INFO - Namespace(model='PointNetSemSeg', batch_size=16, epoch=300, warmup_epoch=10, learning_rate=0.0002, log_dir='segmentation', npoint=2048, normal=False, ckpts='../experiments/pretrain/PointSimsiam/simsiam_pointnet_linear_mask_05_08/ckpt-last.pth', root='../data/shapenetcore_partanno_segmentation_benchmark_v0_normal/')
+2023-06-23 21:26:12,579 - Model - INFO - The number of training data is: 13998
+2023-06-23 21:26:12,579 - Model - INFO - The number of test data is: 2874
+2023-06-23 21:26:14,009 - Model - INFO - Epoch 1 (1/300):
+2023-06-23 21:27:45,145 - Model - INFO - PARAMETER ...
+2023-06-23 21:27:45,145 - Model - INFO - Namespace(model='PointNetSemSeg', batch_size=16, epoch=300, warmup_epoch=10, learning_rate=0.0002, log_dir='segmentation', npoint=2048, normal=False, ckpts='../experiments/pretrain/PointSimsiam/simsiam_pointnet_linear_mask_05_08/ckpt-last.pth', root='../data/shapenetcore_partanno_segmentation_benchmark_v0_normal/')
+2023-06-23 21:27:45,235 - Model - INFO - The number of training data is: 13998
+2023-06-23 21:27:45,235 - Model - INFO - The number of test data is: 2874
+2023-06-23 21:27:46,217 - Model - INFO - Epoch 1 (1/300):

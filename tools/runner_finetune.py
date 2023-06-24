@@ -90,7 +90,6 @@ def run_net(args, config, train_writer=None, val_writer=None):
     # trainval
     # training
     base_model.zero_grad()
-    # TODO: Check this, comes from Point-M2AE
     # # only finetune cls head
     for name, param in base_model.named_parameters():
         # if 'cls_head_' in name or "norm." in name:

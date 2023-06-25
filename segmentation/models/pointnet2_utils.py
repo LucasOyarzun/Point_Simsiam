@@ -259,9 +259,9 @@ class PointNetSetAbstractionMsg(nn.Module):
         return new_xyz, new_points_concat
 
 
-class PointNetFeaturePropagation_(nn.Module):
+class PointNetFeaturePropagation(nn.Module):
     def __init__(self, in_channel, mlp):
-        super(PointNetFeaturePropagation_, self).__init__()
+        super(PointNetFeaturePropagation, self).__init__()
         self.mlp_convs = nn.ModuleList()
         self.mlp_bns = nn.ModuleList()
         last_channel = in_channel

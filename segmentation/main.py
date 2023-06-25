@@ -18,7 +18,10 @@ from pathlib import Path
 from tqdm import tqdm
 from dataset import PartNormalDataset
 
-sys.path.append("./")
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+ROOT_DIR = BASE_DIR
+sys.path.append(os.path.join(ROOT_DIR, 'models'))
+
 seg_classes = {'Earphone': [16, 17, 18], 'Motorbike': [30, 31, 32, 33, 34, 35], 'Rocket': [41, 42, 43],
                'Car': [8, 9, 10, 11], 'Laptop': [28, 29], 'Cap': [6, 7], 'Skateboard': [44, 45, 46], 'Mug': [36, 37],
                'Guitar': [19, 20, 21], 'Bag': [4, 5], 'Lamp': [24, 25, 26, 27], 'Table': [47, 48, 49],
@@ -44,23 +47,32 @@ def to_categorical(y, num_classes):
 
 def parse_args():
     parser = argparse.ArgumentParser('Model')
-    parser.add_argument('--model', type=str, default='pt', help='model name')
+    parser.add_argument('--model', type=str, default='PointNet', help='model name')
     parser.add_argument('--batch_size', type=int, default=16, help='batch Size during training')
     parser.add_argument('--epoch', default=300, type=int, help='epoch to run')
     parser.add_argument('--warmup_epoch', default=10, type=int, help='warmup epoch')
     parser.add_argument('--learning_rate', default=0.0002, type=float, help='initial learning rate')
+    parser.add_argument('--gpu', type=str, default='0', help='specify GPU devices')
+    # parser.add_argument('--optimizer', type=str, default='AdamW', help='Adam or SGD')
     parser.add_argument('--log_dir', type=str, default='./exp', help='log path')
+    # parser.add_argument('--decay_rate', type=float, default=1e-4, help='weight decay')
     parser.add_argument('--npoint', type=int, default=2048, help='point Number')
     parser.add_argument('--normal', action='store_true', default=False, help='use normals')
-    parser.add_argument('--ckpts', type=str, default=None, help='ckpts')
+    # parser.add_argument('--step_size', type=int, default=20, help='decay step for lr decay')
+    # parser.add_argument('--lr_decay', type=float, default=0.5, help='decay rate for lr decay')
+    parser.add_argument('--ckpts', type=str, default='../best/pretrain/m0.6R_1_pretrain300.pth', help='ckpts')
     parser.add_argument('--root', type=str, default='../data/shapenetcore_partanno_segmentation_benchmark_v0_normal/', help='data root')
     return parser.parse_args()
+
 
 def main(args):
     def log_string(str):
         logger.info(str)
         print(str)
-        
+
+    '''HYPER PARAMETER'''
+    os.environ["CUDA_VISIBLE_DEVICES"] = args.gpu
+
     '''CREATE DIR'''
     timestr = str(datetime.datetime.now().strftime('%Y-%m-%d_%H-%M'))
     exp_dir = Path('./log/')
@@ -103,10 +115,10 @@ def main(args):
 
     '''MODEL LOADING'''
     MODEL = importlib.import_module(args.model)
-    shutil.copy('./%s.py' % args.model, str(exp_dir))
+    shutil.copy('models/%s.py' % args.model, str(exp_dir))
     # shutil.copy('models/pointnet2_utils.py', str(exp_dir))
 
-    classifier = MODEL.PointNetSemSeg(num_part).cuda()
+    classifier = MODEL.get_model(num_part).cuda()
     criterion = MODEL.get_loss().cuda()
     classifier.apply(inplace_relu)
     print('# generator parameters:', sum(param.numel() for param in classifier.parameters()))
@@ -148,7 +160,7 @@ def main(args):
     global_epoch = 0
     best_class_avg_iou = 0
     best_inctance_avg_iou = 0
-    
+
     classifier.zero_grad()
     for epoch in range(start_epoch, args.epoch):
         mean_correct = []
@@ -167,9 +179,9 @@ def main(args):
             points[:, :, 0:3] = provider.shift_point_cloud(points[:, :, 0:3])
             points = torch.Tensor(points)
             points, label, target = points.float().cuda(), label.long().cuda(), target.long().cuda()
-            points = points.transpose(2, 1)
+            points = points.transpose(2, 1).contiguous()
 
-            seg_pred = classifier(points, to_categorical(label, num_classes))
+            seg_pred = classifier(points)#, to_categorical(label, num_classes))
             seg_pred = seg_pred.contiguous().view(-1, num_part)
             target = target.view(-1, 1)[:, 0]
             pred_choice = seg_pred.data.max(1)[1]
@@ -219,7 +231,7 @@ def main(args):
                 cur_batch_size, NUM_POINT, _ = points.size()
                 points, label, target = points.float().cuda(), label.long().cuda(), target.long().cuda()
                 points = points.transpose(2, 1)
-                seg_pred = classifier(points, to_categorical(label, num_classes))
+                seg_pred = classifier(points)#, to_categorical(label, num_classes))
                 cur_pred_val = seg_pred.cpu().data.numpy()
                 cur_pred_val_logits = cur_pred_val
                 cur_pred_val = np.zeros((cur_batch_size, NUM_POINT)).astype(np.int32)
@@ -260,7 +272,7 @@ def main(args):
             mean_shape_ious = np.mean(list(shape_ious.values()))
             test_metrics['accuracy'] = total_correct / float(total_seen)
             test_metrics['class_avg_accuracy'] = np.mean(
-                np.array(total_correct_class) / np.array(total_seen_class, dtype=np.float))
+                np.array(total_correct_class) / np.array(total_seen_class, dtype=float))
             for cat in sorted(shape_ious.keys()):
                 log_string('eval mIoU of %s %f' % (cat + ' ' * (14 - len(cat)), shape_ious[cat]))
             test_metrics['class_avg_iou'] = mean_shape_ious

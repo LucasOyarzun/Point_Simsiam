@@ -2,6 +2,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import random
+import time
 from knn_cuda import KNN
 from utils import misc
 
@@ -162,8 +163,8 @@ class PointCloudMask(object):
         self.knn = KNN(k=32, transpose_mode=True)
 
     def __call__(self, pc):
+        random.seed(int(time.time()))
         mask_ratio = torch.tensor([random.uniform(self.mask_ratio[0], self.mask_ratio[1])], device=pc.device)
-        bsize = pc.size(0)
         center = misc.fps(pc, self.num_group)  # B G 3
         _, idx = self.knn(pc, center)  # B G M
 

@@ -1,18 +1,12 @@
-import os, sys
-# online package
+import os
 import torch
-# optimizer
 import torch.optim as optim
-# dataloader
 from torch.utils.data import DataLoader
 from datasets import build_dataset_from_cfg
-
 from models import build_model_from_cfg
-# utils
 from utils.logger import *
 from utils.misc import *
 from timm.scheduler import CosineLRScheduler
-
 
 
 def dataset_builder(args, config):
@@ -54,7 +48,6 @@ def build_opti_sche(base_model, config):
                 if not param.requires_grad:
                     continue  # frozen weights
                 if len(param.shape) == 1 or name.endswith(".bias") or 'token' in name or name in skip_list:
-                    # print(name)
                     no_decay.append(param)
                 else:
                     decay.append(param)

@@ -17,13 +17,17 @@ dataset: {
             others: {partition: 'test', num_points: 1024}},
   test: { _base_: cfgs/dataset/ModelNet40_linear_probing.yaml,
             others: {partition: 'test', num_points: 1024}}}
-
+            
 model : {
-  NAME: PointSimsiamClassifier,
+  NAME: PointTransformer,
+  trans_dim: 384,
+  depth: 12,
+  drop_path_rate: 0.1,
   cls_dim: 40,
-  encoder: {
-    _base_: cfgs/encoder/PointMLP.yaml,
-  }
+  num_heads: 6,
+  group_size: 32,
+  num_group: 64,
+  encoder_dims: 384,
 }
 
 total_bs: 128

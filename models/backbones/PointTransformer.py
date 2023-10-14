@@ -581,7 +581,7 @@ class PointTransformer(nn.Module):
             if m.bias is not None:
                 nn.init.constant_(m.bias, 0)
 
-    def forward(self, pts):
+    def forward(self, pts, eval_encoder=False):
         neighborhood, center = self.group_divider(pts)
         group_input_tokens = self.encoder(neighborhood)  # B G N
 
@@ -596,5 +596,7 @@ class PointTransformer(nn.Module):
         x = self.blocks(x, pos)
         x = self.norm(x)
         concat_f = torch.cat([x[:, 0], x[:, 1:].max(1)[0]], dim=-1)
+        if eval_encoder:
+            return concat_f
         ret = self.cls_head_finetune(concat_f)
         return ret

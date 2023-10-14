@@ -1,11 +1,8 @@
 from tools import pretrain_run_net as pretrain
 from tools import finetune_run_net as finetune
-from tools import test_svm_run_net_modelnet40 as test_svm_modelnet40
-from tools import test_svm_run_net_scan as test_svm_scan
-from tools import test_knn_run_net_modelnet40 as test_knn_modelnet40
-from tools import test_knn_run_net_scan as test_knn_scan
+from tools import run_linear_probing_modelnet40 as test_linear_modelnet40
+from tools import run_linear_probing_scan as test_linear_scan
 from tools import test_run_net as test_net
-from tools import run_visualization as visualization
 from tools import run_test_invariation as test_invariation
 from utils import parser, dist_utils, misc
 from utils.logger import *
@@ -15,8 +12,10 @@ import os
 import torch
 from tensorboardX import SummaryWriter
 
+from test_transformations import main as test_transformations
+
+
 def main():
-    # args
     args = parser.get_args()
     # CUDA
     args.use_gpu = torch.cuda.is_available()
@@ -64,7 +63,6 @@ def main():
     # log 
     log_args_to_file(args, 'args', logger = logger)
     log_config_to_file(config, 'config', logger = logger)
-    # exit()
     logger.info(f'Distributed training: {args.distributed}')
     # set random seeds
     if args.seed is not None:
@@ -83,25 +81,18 @@ def main():
         config.dataset.val.others.fold = args.fold
         
     # run
-    if args.visualization:
-        visualization(args, config) 
-    elif args.test_invariation:
-        test_invariation(args, config)
-    elif args.test_svm == 'modelnet40':
-        test_svm_modelnet40(args, config)
-    elif args.test_svm == 'scan':
-        test_svm_scan(args, config)
-    elif args.test_knn == 'modelnet40':
-        test_knn_modelnet40(args, config)
-    elif args.test_knn == 'scan':
-        test_knn_scan(args, config)
+    if args.linear_probing == 'modelnet40':
+        test_linear_modelnet40(args.linear_model, args, config)
+    elif args.linear_probing == 'scan':
+        test_linear_scan(args.linear_model, args, config)
     elif args.test: # Voting test
         test_net(args, config)
+    elif args.finetune_model:
+        finetune(args, config, train_writer, val_writer)
+    elif args.test_transformations:
+        test_transformations(args, config)
     else:
-        if args.finetune_model:
-            finetune(args, config, train_writer, val_writer)
-        else:
-            pretrain(args, config, train_writer, val_writer)
+        pretrain(args, config, train_writer, val_writer)
 
 
 if __name__ == '__main__':

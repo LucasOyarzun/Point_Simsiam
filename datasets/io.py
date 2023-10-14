@@ -10,6 +10,8 @@ class IO:
 
         if file_extension in ['.npy']:
             return cls._read_npy(file_path)
+        elif file_extension in ['.npz']:
+            return cls._read_npz(file_path)
         # elif file_extension in ['.pcd']:
         #     return cls._read_pcd(file_path)
         elif file_extension in ['.h5']:
@@ -23,6 +25,10 @@ class IO:
     @classmethod
     def _read_npy(cls, file_path):
         return np.load(file_path)
+    
+    @classmethod
+    def _read_npz(cls, file_path):
+        return np.load(file_path)['points']
        
     # References: https://github.com/dimatura/pypcd/blob/master/pypcd/pypcd.py#L275
     # Support PCD files without compression ONLY!

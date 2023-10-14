@@ -15,7 +15,7 @@ sys.path.append(BASE_DIR)
 
 @DATASETS.register_module()
 class ScanObjectNN(Dataset):
-    def __init__(self, config, **kwargs):
+    def __init__(self, config):
         super().__init__()
         self.subset = config.subset
         self.root = config.ROOT

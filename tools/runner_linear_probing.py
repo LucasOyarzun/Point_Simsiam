@@ -1,15 +1,10 @@
 import torch
 import torch.nn as nn
 import numpy as np
-import os
-import json
 from tools import builder
-from utils import misc, dist_utils
-import time
 from utils.logger import *
-from utils.AverageMeter import AverageMeter
 from sklearn.svm import SVC
-
+from sklearn.neighbors import KNeighborsClassifier
 
 
 class Acc_Metric:
@@ -31,7 +26,7 @@ class Acc_Metric:
         return _dict
 
 
-def run_net_svm_modelnet40(args, config):
+def run_linear_probing_modelnet40(model_name, args, config):
     logger = get_logger(args.log_name)
     
     # build for linear SVM
@@ -91,16 +86,20 @@ def run_net_svm_modelnet40(args, config):
     feats_test = np.array(feats_test)
     labels_test = np.array(labels_test)
         
-    model_tl = SVC(C = 0.012, kernel ='linear') # RBM deberia ser mayor
+    # Linear model
+    if model_name == 'svm':
+        model_tl = SVC(C = 0.042, kernel ='linear')
+    elif model_name == "knn":
+        model_tl = KNeighborsClassifier(20)
     model_tl.fit(feats_train, labels_train)
     test_accuracy = model_tl.score(feats_test, labels_test)
     print_log(f"Linear Accuracy : {test_accuracy}", logger=logger)
 
 
-def run_net_svm_scan(args, config):
+def run_linear_probing_scan(model_name, args, config):
     logger = get_logger(args.log_name)
     
-    # build for linear SVM
+    # build for linear probing
     train_dataloader_svm, test_dataloader_svm = builder.dataset_builder_linear_probing(config.dataset)
 
     # build model
@@ -164,8 +163,12 @@ def run_net_svm_scan(args, config):
 
     feats_test = np.array(feats_test)
     labels_test = np.array(labels_test)
-        
-    model_tl = SVC(C = 0.042, kernel ='linear')
+    
+    # Linear model
+    if model_name == 'svm':
+        model_tl = SVC(C = 0.042, kernel ='linear')
+    elif model_name == "knn":
+        model_tl = KNeighborsClassifier(20)
     model_tl.fit(feats_train, labels_train)
     test_accuracy = model_tl.score(feats_test, labels_test)
     print_log(f"Linear Accuracy : {test_accuracy}", logger=logger)

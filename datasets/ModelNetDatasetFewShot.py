@@ -7,13 +7,10 @@ import os
 import numpy as np
 import warnings
 import pickle
-
-from tqdm import tqdm
 from torch.utils.data import Dataset
 from .build import DATASETS
 from utils.logger import *
 import torch
-import random
 
 warnings.filterwarnings('ignore')
 
@@ -44,13 +41,10 @@ class ModelNetFewShot(Dataset):
             raise RuntimeError()
 
         self.pickle_path = os.path.join(self.root, f'{self.way}way_{self.shot}shot', f'{self.fold}.pkl')
-
-
         print_log('Load processed data from %s...' % self.pickle_path, logger = 'ModelNetFewShot')
 
         with open(self.pickle_path, 'rb') as f:
             self.dataset = pickle.load(f)[self.subset]
-
         print_log('The size of %s data is %d' % (split, len(self.dataset)), logger = 'ModelNetFewShot')
 
     def __len__(self):

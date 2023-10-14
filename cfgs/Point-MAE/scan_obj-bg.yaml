@@ -8,18 +8,18 @@ optimizer : {
 scheduler: {
   type: CosLR,
   kwargs: {
-    epochs: 150,
+    epochs: 300,
     initial_epochs : 10
 }}
 
-
 dataset : {
-  train : { _base_: cfgs/dataset/ModelNet40FewShot.yaml,
+  train : { _base_: cfgs/dataset/Scan_OBJ-BG.yaml,
             others: {subset: 'train'}},
-  val : { _base_: cfgs/dataset/ModelNet40FewShot.yaml,
+  val : { _base_: cfgs/dataset/Scan_OBJ-BG.yaml,
             others: {subset: 'test'}},
-  test : { _base_: cfgs/dataset/ModelNet40.yaml,
+  test : { _base_: cfgs/dataset/Scan_OBJ-BG.yaml,
             others: {subset: 'test'}}}
+
 model : {
   NAME: PointTransformer,
   trans_dim: 384,
@@ -32,8 +32,8 @@ model : {
   encoder_dims: 384,
 }
 
-npoints: 1024
+npoints: 2048
 total_bs : 32
 step_per_update : 1
-max_epoch : 150
+max_epoch : 300
 grad_norm_clip : 10

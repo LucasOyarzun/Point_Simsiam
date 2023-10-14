@@ -1,8 +1,5 @@
 import torch
 import torch.nn as nn
-import json
-import random
-import visdom
 
 from tools import builder
 from utils import misc, dist_utils
@@ -10,12 +7,24 @@ import time
 from utils.logger import *
 from utils.AverageMeter import AverageMeter
 
-from utils.visdom import vis_pc
 from torchvision import transforms
 from datasets import data_transforms
 
 
+# Point MAE
+# train_transforms = transforms.Compose(
+#     [
+#         # data_transforms.PointcloudScale(),
+#         # data_transforms.PointcloudRotate(),
+#         # data_transforms.PointcloudRotatePerturbation(),
+#         # data_transforms.PointcloudTranslate(),
+#         # data_transforms.PointcloudJitter(),
+#         # data_transforms.PointcloudRandomInputDropout(),
+#         data_transforms.PointcloudScaleAndTranslate(),
+#     ]
+# )
 
+# Point Simsiam
 train_transforms = transforms.Compose(
     [
         data_transforms.PointcloudScale(),
@@ -48,13 +57,11 @@ class Acc_Metric:
 
 
 def run_net(args, config, train_writer=None, val_writer=None):
-    # vis = visdom.Visdom()
     logger = get_logger(args.log_name)
 
-    # build dataset for pre-training
-    (train_sampler, train_dataloader), (_, test_dataloader),= builder.dataset_builder(args, config.dataset.train), \
-                                                            builder.dataset_builder(args, config.dataset.val)
-    (_, extra_train_dataloader)  = builder.dataset_builder(args, config.dataset.extra_train) if config.dataset.get('extra_train') else (None, None)
+    # build dataset
+    (train_sampler, train_dataloader)= builder.dataset_builder(args, config.dataset.train)
+    
     # build model
     base_model = builder.model_builder(config.model)
     if args.use_gpu:
@@ -92,8 +99,6 @@ def run_net(args, config, train_writer=None, val_writer=None):
 
     # training
     base_model.zero_grad()
-    load_clouds = 0
-    best_accuracy = 0.0
     max_steps = config.max_epoch * len(train_dataloader)
     for epoch in range(start_epoch, config.max_epoch + 1):
         if args.distributed:
@@ -123,8 +128,12 @@ def run_net(args, config, train_writer=None, val_writer=None):
             elif dataset_name == 'ModelNet':
                 points = data[0].cuda()
                 points = misc.fps(points, npoints)
+            elif dataset_name == 'SimpleShape':
+                points = data.cuda()
+                points = misc.fps(points, npoints)
             else:
                 raise NotImplementedError(f'Train phase do not support {dataset_name}')
+
             assert points.size(1) == npoints
 
             if config.dataset.train.others.get('siamese_network'):
@@ -140,7 +149,6 @@ def run_net(args, config, train_writer=None, val_writer=None):
                 points = train_transforms(points)
                 points = points.permute(0, 2, 1).contiguous()
                 loss = base_model(points)
-
             try:
                 loss.backward()
             except:
@@ -158,9 +166,9 @@ def run_net(args, config, train_writer=None, val_writer=None):
 
             if args.distributed:
                 loss = dist_utils.reduce_tensor(loss, args)
-                losses.update([loss.item()])
+                losses.update([loss.item()]) # losses.update([loss.item()*1000])
             else:
-                losses.update([loss.item()])
+                losses.update([loss.item()]) # losses.update([loss.item()*1000])
 
 
             if args.distributed:

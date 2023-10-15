@@ -126,6 +126,7 @@ class PointNetCls(nn.Module):
                 
 
     def forward(self, x):
+        x = x.transpose(2, 1).contiguous()
         b = self.encoder
         c = self.cls_head_finetune
         z = nn.Sequential(b, c)(x)

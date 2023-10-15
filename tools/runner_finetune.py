@@ -14,12 +14,21 @@ from torchvision import transforms
 
 train_transforms = transforms.Compose(
     [
+         # data_transforms.PointcloudScale(),
+         # data_transforms.PointcloudRotate(),
+         # data_transforms.PointcloudTranslate(),
+         # data_transforms.PointcloudJitter(),
+         # data_transforms.PointcloudRandomInputDropout(),
+         # data_transforms.RandomHorizontalFlip(),
          data_transforms.PointcloudScaleAndTranslate(),
     ]
 )
 
 test_transforms = transforms.Compose(
     [
+        # data_transforms.PointcloudScale(),
+        # data_transforms.PointcloudRotate(),
+        # data_transforms.PointcloudTranslate(),
         data_transforms.PointcloudScaleAndTranslate(),
     ]
 )
@@ -87,8 +96,16 @@ def run_net(args, config, train_writer=None, val_writer=None):
     if args.resume:
         builder.resume_optimizer(optimizer, args, logger = logger)
 
+    # trainval
     # training
     base_model.zero_grad()
+    # only finetune cls head
+    for name, param in base_model.named_parameters():
+        # if 'cls_head_' in name or "norm." in name:
+        param.requires_grad_(True)
+        # else:
+            # param.requires_grad_(False)
+    
 
     for epoch in range(start_epoch, config.max_epoch + 1):
         if args.distributed:
@@ -113,6 +130,7 @@ def run_net(args, config, train_writer=None, val_writer=None):
             
             points = data[0].cuda()
             label = data[1].cuda()
+
             if npoints == 1024:
                 point_all = 1200
             elif npoints == 2048:
@@ -129,12 +147,15 @@ def run_net(args, config, train_writer=None, val_writer=None):
             fps_idx = pointnet2_utils.furthest_point_sample(points, point_all)  # (B, npoint)
             fps_idx = fps_idx[:, np.random.choice(point_all, npoints, False)]
             points = pointnet2_utils.gather_operation(points.transpose(1, 2).contiguous(), fps_idx).transpose(1, 2).contiguous()  # (B, N, 3)
+            # import pdb; pdb.set_trace()
 
             points = train_transforms(points)
-            # points = points.transpose(1, 2).contiguous()
+
             ret = base_model(points)
             loss, acc = base_model.module.get_loss_acc(ret, label)
+
             _loss = loss
+
             _loss.backward()
 
             # forward
@@ -152,8 +173,10 @@ def run_net(args, config, train_writer=None, val_writer=None):
             else:
                 losses.update([loss.item(), acc.item()])
 
+
             if args.distributed:
                 torch.cuda.synchronize()
+
 
             if train_writer is not None:
                 train_writer.add_scalar('Loss/Batch/Loss', loss.item(), n_itr)
@@ -173,12 +196,14 @@ def run_net(args, config, train_writer=None, val_writer=None):
 
         if train_writer is not None:
             train_writer.add_scalar('Loss/Epoch/Loss', losses.avg(0), epoch)
+
         print_log('[Training] EPOCH: %d EpochTime = %.3f (s) Losses = %s lr = %.6f' %
             (epoch,  epoch_end_time - epoch_start_time, ['%.4f' % l for l in losses.avg()],optimizer.param_groups[0]['lr']), logger = logger)
 
         if epoch % args.val_freq == 0 and epoch != 0:
             # Validate the current model
             metrics = validate(base_model, test_dataloader, epoch, val_writer, args, config, logger=logger)
+
             better = metrics.better_than(best_metrics)
             # Save ckeckpoints
             if better:
@@ -204,7 +229,7 @@ def validate(base_model, test_dataloader, epoch, val_writer, args, config, logge
             label = data[1].cuda()
 
             points = misc.fps(points, npoints)
-            # points = points.transpose(1, 2).contiguous()
+
             logits = base_model(points)
             target = label.view(-1)
 
@@ -265,7 +290,7 @@ def validate_vote(base_model, test_dataloader, epoch, val_writer, args, config, 
                                                         fps_idx).transpose(1, 2).contiguous()  # (B, N, 3)
 
                 points = test_transforms(points)
-                # points = points.transpose(1, 2).contiguous()
+
                 logits = base_model(points)
                 target = label.view(-1)
 
@@ -305,8 +330,8 @@ def test_net(args, config):
     _, test_dataloader = builder.dataset_builder(args, config.dataset.test)
     base_model = builder.model_builder(config.model)
     # load checkpoints
-    builder.load_model(base_model, args.ckpts, logger = logger) # for finetuned transformer
-    # base_model.load_model_from_ckpt(args.ckpts) # for BERT
+    # builder.load_model(base_model, args.ckpts, logger = logger) # for finetuned transformer
+    base_model.load_model_from_ckpt(args.ckpts) # for BERT
     if args.use_gpu:
         base_model.to(args.local_rank)
 
@@ -329,7 +354,7 @@ def test(base_model, test_dataloader, args, config, logger = None):
             label = data[1].cuda()
 
             points = misc.fps(points, npoints)
-            # points = points.transpose(1, 2).contiguous()
+
             logits = base_model(points)
             target = label.view(-1)
 
@@ -393,7 +418,7 @@ def test_vote(base_model, test_dataloader, epoch, val_writer, args, config, logg
                                                         fps_idx).transpose(1, 2).contiguous()  # (B, N, 3)
 
                 points = test_transforms(points)
-                # points = points.transpose(1, 2).contiguous()
+
                 logits = base_model(points)
                 target = label.view(-1)
 

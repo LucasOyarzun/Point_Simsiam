@@ -38,7 +38,9 @@ dataset : {
 model : {
   NAME: PointSimsiam,
   encoder: {
-    _base_: cfgs/encoder/PointMLP.yaml,
+    NAME: PointNetEncoder,
+    space_transform: True,
+    feature_transform: True
   }
 }
 

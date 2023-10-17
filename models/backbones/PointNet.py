@@ -31,7 +31,8 @@ class PointNetEncoder(nn.Module):
             self.fstn = STNkd(k=64)
 
     def forward(self, x):
-        n_pts = x.size()[1]
+        x = x.transpose(2, 1).contiguous()
+        n_pts = x.size()[2]
         if self.space_transform:
             trans = self.stn(x)
             x = x.transpose(2, 1)
@@ -64,7 +65,7 @@ class PointNetCls(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.cls_dim = config.cls_dim
-        self.encoder = builder.model_builder(config.encoder._base_)
+        self.encoder = builder.model_builder(config.encoder)
         self.cls_head_finetune = nn.Sequential(
                 nn.Linear(self.encoder.output_dim, 256),
                 nn.BatchNorm1d(256),
@@ -126,7 +127,6 @@ class PointNetCls(nn.Module):
                 
 
     def forward(self, x):
-        x = x.transpose(2, 1).contiguous()
         b = self.encoder
         c = self.cls_head_finetune
         z = nn.Sequential(b, c)(x)

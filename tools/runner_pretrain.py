@@ -147,12 +147,9 @@ def run_net(args, config, train_writer=None, val_writer=None):
                 data2 = train_transforms(points)
                 assert data1.size(1) == npoints
                 assert data2.size(1) == npoints
-                data1 = data1.permute(0, 2, 1).contiguous()
-                data2 = data2.permute(0, 2, 1).contiguous()
                 loss = base_model(data1, data2)
             else:
                 points = train_transforms(points)
-                points = points.permute(0, 2, 1).contiguous()
                 loss = base_model(points)
             try:
                 loss.backward()

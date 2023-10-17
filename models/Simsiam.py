@@ -66,7 +66,7 @@ class PointSimsiam(nn.Module):
     def __init__(self, config):
         super().__init__()
 
-        self.encoder = builder.model_builder(config.encoder._base_)
+        self.encoder = builder.model_builder(config.encoder)
         self.projector = projection_MLP(self.encoder.output_dim)
         self.predictor = prediction_MLP()
 
@@ -83,7 +83,7 @@ class PointSimsiamClassifier(nn.Module):
     def __init__(self, config):
         super().__init__()
         self.cls_dim = config.cls_dim
-        self.encoder = builder.model_builder(config.encoder._base_)
+        self.encoder = builder.model_builder(config.encoder)
         self.cls_head_finetune = nn.Sequential(
                 nn.Linear(self.encoder.output_dim, 256),
                 nn.BatchNorm1d(256),
@@ -145,6 +145,7 @@ class PointSimsiamClassifier(nn.Module):
                 
 
     def forward(self, x, eval_encoder=False):
+        
         b = self.encoder
         if eval_encoder: # for linear probing
             return b(x)

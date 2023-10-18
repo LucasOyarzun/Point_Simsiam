@@ -44,7 +44,6 @@ class DGCNNEncoder(nn.Module):
         self.k = config.k
         self.emb_dims = 1024
         self.output_dim = self.emb_dims * 2
-
         self.bn1 = nn.BatchNorm2d(64)
         self.bn2 = nn.BatchNorm2d(64)
         self.bn3 = nn.BatchNorm2d(128)
@@ -78,6 +77,7 @@ class DGCNNEncoder(nn.Module):
         )
 
     def forward(self, x):
+        x = x.transpose(1, 2).contiguous()
         batch_size = x.size(0)
         x = get_graph_feature(
             x, k=self.k

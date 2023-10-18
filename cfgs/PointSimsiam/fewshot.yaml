@@ -24,7 +24,8 @@ model : {
   NAME: PointSimsiamClassifier,
   cls_dim: 40,
   encoder: {
-    _base_: cfgs/encoder/PointTransformer.yaml,
+    NAME: DGCNNEncoder,
+    k: 40
   }
 }
 

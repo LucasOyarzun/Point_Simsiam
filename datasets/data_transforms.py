@@ -1,8 +1,6 @@
 import numpy as np
 import torch
-import torch.nn as nn
 import random
-import time
 from knn_cuda import KNN
 from utils import misc
 
@@ -155,24 +153,35 @@ class PointCloudNoise(object):
             pc[i, :, 0:3] += noise.cuda()
         return pc
 
+
 class PointCloudMask(object):
-    def __init__(self, num_group=32, group_size=32, mask_ratio=[0.5, 0.5]):
+    def __init__(self, num_group=32, group_size=32, mask_ratio=0.5):
         self.num_group = num_group
         self.group_size = group_size
         self.mask_ratio = mask_ratio
         self.knn = KNN(k=32, transpose_mode=True)
 
     def __call__(self, pc):
-        random.seed(int(time.time()))
-        mask_ratio = torch.tensor([random.uniform(self.mask_ratio[0], self.mask_ratio[1])], device=pc.device)
-        center = misc.fps(pc, self.num_group)  # B G 3
-        _, idx = self.knn(pc, center)  # B G M
+        B, N, _ = pc.shape
+        centers = misc.fps(pc, self.num_group)
+        groups, idx = self.knn(pc, centers)
 
-        num_groups_deleted = (self.num_group * mask_ratio).long()
-        num_points_deleted = num_groups_deleted * self.group_size
-        idx_to_delete = idx[:, :num_groups_deleted].flatten(1)
+        num_groups_deleted = int((self.num_group * self.mask_ratio))
+        random_groups = [random.sample(range(groups.size(1)), num_groups_deleted) for _ in range(B)]
+        
+        # Create a mask for every sample in batch
+        masks = torch.ones(B, groups.size(1), groups.size(2), dtype=torch.bool).cuda()
+        for b, random_group in enumerate(random_groups):
+            masks[b, random_group, :] = False
+        
+        # Apply mask to batch
+        masks_flat = masks.view(B, -1)
+        pc_flat = pc.view(B, -1, 3)
+        pc = pc_flat[masks_flat].view(B, -1, 3)
 
-        first_point = pc[:, 0].unsqueeze(1).expand(-1, num_points_deleted, -1)
-        pc.scatter_(1, idx_to_delete.unsqueeze(2).expand(-1, -1, 3), first_point)
-
+        num_points_to_add = N - pc.shape[1]
+        if num_points_to_add > 0:
+            random_indices = torch.randint(0, pc.shape[1], (B, num_points_to_add)).cuda()
+            repeated_points = pc.gather(1, random_indices.unsqueeze(2).expand(-1, -1, 3))
+            pc = torch.cat((pc, repeated_points), dim=1)
         return pc

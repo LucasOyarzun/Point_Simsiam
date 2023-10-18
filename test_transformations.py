@@ -14,7 +14,7 @@ my_transforms = transforms.Compose(
         # data_transforms.PointcloudTranslate(),
         # data_transforms.PointcloudJitter(),
         # data_transforms.PointcloudScaleAndTranslate(),
-        data_transforms.PointCloudMask(mask_ratio=[0.5, 0.8]),
+        data_transforms.PointCloudMask(mask_ratio=0.6),
     ]
 )
 
@@ -50,9 +50,11 @@ def main(args, config):
             points = points.unsqueeze(0)
             points = misc.fps(points, npoints)
             original_points = points.clone()
-            transformed_points = my_transforms(points)
             vis_pc(vis, original_points[0], 'Original')
+            transformed_points = my_transforms(points)
             vis_pc(vis, transformed_points[0], 'Transformed')
+            transformed_points_2 = my_transforms(original_points)
+            vis_pc(vis, transformed_points_2[0], 'Transformed 2')
             return
         
         

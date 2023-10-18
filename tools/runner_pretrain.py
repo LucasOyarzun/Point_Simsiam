@@ -31,7 +31,8 @@ train_transforms = transforms.Compose(
         data_transforms.PointcloudRotate(),
         data_transforms.PointcloudTranslate(),
         data_transforms.PointcloudJitter(),
-        data_transforms.PointCloudMask(mask_ratio=[0.5, 0.8]),
+        data_transforms.PointcloudScaleAndTranslate(),
+        data_transforms.PointCloudMask(mask_ratio=0.6),
     ]
 )
 

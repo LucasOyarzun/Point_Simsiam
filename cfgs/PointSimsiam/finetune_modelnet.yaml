@@ -23,7 +23,8 @@ model : {
   NAME: PointSimsiamClassifier,
   cls_dim: 40,
   encoder: {
-    _base_: cfgs/encoder/PointNet.yaml,
+    NAME: DGCNNEncoder,
+    k: 40
   }
 }
 

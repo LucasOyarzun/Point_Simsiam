@@ -23,7 +23,9 @@ model : {
   NAME: PointNetCls,
   cls_dim: 40,
   encoder: {
-    _base_: cfgs/encoder/PointNet.yaml,
+    NAME: PointNetEncoder,
+    space_transform: True,
+    feature_transform: True
   },
 }
 

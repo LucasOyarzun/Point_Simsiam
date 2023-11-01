@@ -22,7 +22,7 @@ dataset : {
 
 model : {
   NAME: PointMLPCls,
-  cls_dim: 40,
+  cls_dim: 15,
   encoder: {
     _base_: cfgs/encoder/PointNet.yaml,
   }

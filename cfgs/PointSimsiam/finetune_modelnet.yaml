@@ -23,8 +23,9 @@ model : {
   NAME: PointSimsiamClassifier,
   cls_dim: 40,
   encoder: {
-    NAME: DGCNNEncoder,
-    k: 40
+    NAME: PointNetEncoder,
+    space_transform: True,
+    feature_transform: True,
   }
 }
 

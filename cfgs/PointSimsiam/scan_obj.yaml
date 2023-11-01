@@ -22,10 +22,17 @@ dataset : {
 
 model : {
   NAME: PointSimsiamClassifier,
+  cls_dim: 15,
   encoder: {
-    _base_: cfgs/encoder/PointMLP.yaml,
-  },
-  cls_dim: 40,
+    NAME: PointTransformerEncoder,
+    trans_dim: 384,
+    depth: 12,
+    drop_path_rate: 0.1,
+    num_heads: 6,
+    group_size: 32,
+    num_group: 64,
+    encoder_dims: 384
+  }
 }
 
 npoints: 2048

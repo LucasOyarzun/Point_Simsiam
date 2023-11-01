@@ -386,7 +386,6 @@ class PointTransformerMaskedEncoder(nn.Module):
         trunc_normal_(self.mask_token, std=0.02)
 
     def forward(self, pts):
-        pts = pts.transpose(1, 2).contiguous()
         neighborhood, center = self.group_divider(pts)
 
         x_vis, mask = self.MaskTransformer(neighborhood, center)
@@ -416,7 +415,6 @@ class PointTransformerEncoder(nn.Module):
         self.trans_dim = config.trans_dim
         self.depth = config.depth
         self.drop_path_rate = config.drop_path_rate
-        self.cls_dim = config.cls_dim
         self.num_heads = config.num_heads
 
         self.group_size = config.group_size
@@ -448,7 +446,6 @@ class PointTransformerEncoder(nn.Module):
         trunc_normal_(self.cls_pos, std=0.02)
 
     def forward(self, pts):
-        pts = pts.transpose(1, 2).contiguous()
         neighborhood, center = self.group_divider(pts)
         group_input_tokens = self.encoder(neighborhood)  # B G N
 

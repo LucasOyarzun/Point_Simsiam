@@ -37,13 +37,22 @@ dataset : {
 
 model : {
   NAME: PointBYOL,
+  cls_dim: 40,
   encoder: {
-    _base_: cfgs/encoder/PointMLP.yaml,
+    NAME: PointTransformerEncoder,
+      cls_dim: 40,
+      trans_dim: 384,
+      depth: 12,
+      drop_path_rate: 0.1,
+      num_heads: 6,
+      group_size: 32,
+      num_group: 64,
+      encoder_dims: 384
   }
 }
 
 
 npoints: 1024
-total_bs : 64
+total_bs : 128
 step_per_update : 1
 max_epoch : 300

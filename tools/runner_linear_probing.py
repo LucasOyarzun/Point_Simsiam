@@ -59,7 +59,6 @@ def run_linear_probing_modelnet40(model_name, args, config):
     
     for i, (data, label) in enumerate(train_dataloader_svm):
         labels = list(map(lambda x: x[0],label.numpy().tolist()))
-        data = data.cuda().permute(0, 2, 1).contiguous()
         with torch.no_grad():
             feats = base_model(data, eval_encoder=True)
         feats = feats.detach().cpu().numpy()
@@ -75,7 +74,6 @@ def run_linear_probing_modelnet40(model_name, args, config):
 
     for i, (data, label) in enumerate(test_dataloader_svm):
         labels = list(map(lambda x: x[0],label.numpy().tolist()))
-        data = data.cuda().permute(0, 2, 1).contiguous()
         with torch.no_grad():
             feats = base_model(data, eval_encoder=True)
         feats = feats.detach().cpu().numpy()

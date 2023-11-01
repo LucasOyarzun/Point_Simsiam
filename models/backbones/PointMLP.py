@@ -331,6 +331,7 @@ class PointMLPEncoder(nn.Module):
         self.act = get_activation(self.activation)
 
     def forward(self, x):
+        x = x.permute(0, 2, 1)
         xyz = x.permute(0, 2, 1)
         batch_size = x.size(0)
         x = self.embedding(x)  # B,D,N

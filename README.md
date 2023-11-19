@@ -90,7 +90,14 @@ python main.py --config cfgs/PointSimsiam/scan_obj-bg.yaml --finetune_model --ex
 For ShapeNetPart, first into the `segmentation/` folder, and run:
 ```bash
 cd segmentation
-python main.py --ckpts <path/to/pre-trained/model> --root path/to/data --learning_rate 0.0002 --epoch 300
+python main.py --root path/to/data --learning_rate 0.0002 --epoch 300 --ckpts <path/to/pre-trained/model> --model <PointTransformer|PointNet|DGCNN>
+```
+
+### Testing
+
+For ModelNet40, run:
+```bash
+python main.py --config cfgs/PointSimsiam/finetune_modelnet.yaml --test --vote --exp_name simsiam_finetune --ckpts experiments/finetune_modelnet/.../ckpt-best.pth 
 ```
 
 ## Acknowledgement

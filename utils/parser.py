@@ -120,8 +120,8 @@ def get_args():
         args.exp_name = 'linear_' + args.linear_model + args.linear_probing + '_' + args.exp_name
     if args.mode is not None:
         args.exp_name = args.exp_name + '_' +args.mode
-    args.experiment_path = os.path.join('./experiments', Path(args.config).stem, Path(args.config).parent.stem, args.exp_name)
-    args.tfboard_path = os.path.join('./experiments', Path(args.config).stem, Path(args.config).parent.stem,'TFBoard' ,args.exp_name)
+    args.experiment_path = os.path.join('./data/experiments', Path(args.config).stem, Path(args.config).parent.stem, args.exp_name)
+    args.tfboard_path = os.path.join('./data/experiments', Path(args.config).stem, Path(args.config).parent.stem,'TFBoard' ,args.exp_name)
     args.log_name = Path(args.config).stem
     create_experiment_dir(args)
     return args

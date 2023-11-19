@@ -279,7 +279,9 @@ class PosExtraction(nn.Module):
 class PointMLPEncoder(nn.Module):
     def __init__(self, config):
         super(PointMLPEncoder, self).__init__()
-        self.output_dim = 1024
+        self.output_dim=1024
+        if config.embed_dim == 32: # PointMLP elite
+            self.output_dim = 256
         self.stages = len(config.pre_blocks)
         self.npoints = config.npoints
         self.pre_blocks = config.pre_blocks

@@ -47,7 +47,7 @@ def to_categorical(y, num_classes):
 
 def parse_args():
     parser = argparse.ArgumentParser('Model')
-    parser.add_argument('--model', type=str, default='pt', help='model name')
+    parser.add_argument('--model', type=str, help='model name')
     parser.add_argument('--batch_size', type=int, default=16, help='batch Size during training')
     parser.add_argument('--epoch', default=300, type=int, help='epoch to run')
     parser.add_argument('--warmup_epoch', default=10, type=int, help='warmup epoch')

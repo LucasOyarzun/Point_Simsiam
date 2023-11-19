@@ -230,9 +230,9 @@ class get_model(nn.Module):
         x = self.conv6(x)
         x = x.max(dim=-1, keepdim=True)[0]
 
-        one_hot_encoded = torch.zeros(l.size(0), 16).cuda()
-        one_hot_encoded.scatter_(1, l, 1)
-        l = one_hot_encoded.unsqueeze(-1)
+        # one_hot_encoded = torch.zeros(l.size(0), 16).cuda()
+        # one_hot_encoded.scatter_(1, l, 1)
+        # l = one_hot_encoded.unsqueeze(-1)   
 
         l = l.view(batch_size, -1, 1)
         l = self.conv7(l)
@@ -248,9 +248,8 @@ class get_model(nn.Module):
         x = self.dp2(x)
         x = self.conv10(x)
         x = self.conv11(x)
-
+        x = F.log_softmax(x, dim=1)
         x = x.transpose(2, 1).contiguous()
-
         return x
 
 

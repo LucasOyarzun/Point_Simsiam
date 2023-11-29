@@ -53,15 +53,11 @@ def parse_args():
     parser.add_argument('--warmup_epoch', default=10, type=int, help='warmup epoch')
     parser.add_argument('--learning_rate', default=0.0002, type=float, help='initial learning rate')
     parser.add_argument('--gpu', type=str, default='0', help='specify GPU devices')
-    # parser.add_argument('--optimizer', type=str, default='AdamW', help='Adam or SGD')
     parser.add_argument('--log_dir', type=str, default='./exp', help='log path')
-    # parser.add_argument('--decay_rate', type=float, default=1e-4, help='weight decay')
     parser.add_argument('--npoint', type=int, default=2048, help='point Number')
     parser.add_argument('--normal', action='store_true', default=False, help='use normals')
-    # parser.add_argument('--step_size', type=int, default=20, help='decay step for lr decay')
-    # parser.add_argument('--lr_decay', type=float, default=0.5, help='decay rate for lr decay')
-    parser.add_argument('--ckpts', type=str, default='../best/pretrain/m0.6R_1_pretrain300.pth', help='ckpts')
-    parser.add_argument('--root', type=str, default='../data/shapenetcore_partanno_segmentation_benchmark_v0_normal/', help='data root')
+    parser.add_argument('--ckpts', type=str, help='ckpts')
+    parser.add_argument('--root', type=str, help='data root')
     return parser.parse_args()
 
 
@@ -272,7 +268,7 @@ def main(args):
             mean_shape_ious = np.mean(list(shape_ious.values()))
             test_metrics['accuracy'] = total_correct / float(total_seen)
             test_metrics['class_avg_accuracy'] = np.mean(
-                np.array(total_correct_class) / np.array(total_seen_class, dtype=np.float))
+                np.array(total_correct_class) / np.array(total_seen_class, dtype=np.float64))
             for cat in sorted(shape_ious.keys()):
                 log_string('eval mIoU of %s %f' % (cat + ' ' * (14 - len(cat)), shape_ious[cat]))
             test_metrics['class_avg_iou'] = mean_shape_ious

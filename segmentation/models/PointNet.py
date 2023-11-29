@@ -100,7 +100,7 @@ def feature_transform_reguliarizer(trans):
 
 
 class PointNetEncoder(nn.Module):
-    def __init__(self, global_feat=True, space_transform=False, feature_transform=False):
+    def __init__(self, global_feat=True):
         # Feature Transform for PointNet++
         super(PointNetEncoder, self).__init__()
         self.conv1 = torch.nn.Conv1d(3, 64, 1)
@@ -111,8 +111,8 @@ class PointNetEncoder(nn.Module):
         self.bn3 = nn.BatchNorm1d(1024)
         self.output_dim = 1024
         self.global_feat = global_feat
-        self.space_transform = space_transform
-        self.feature_transform = feature_transform
+        self.space_transform = True
+        self.feature_transform = True
         if self.space_transform:
             self.stn = STN3d()
         if self.feature_transform:
@@ -150,11 +150,10 @@ class PointNetEncoder(nn.Module):
             return torch.cat([x, pointfeat], dim=1)#, trans, trans_feat
 
 class get_model(nn.Module):
-    def __init__(self, cls_dim=50, feature_transform=False):
+    def __init__(self, cls_dim=50):
         super().__init__()
         self.cls_dim = cls_dim
-        self.feature_transform = feature_transform
-        self.encoder = PointNetEncoder(global_feat=False, feature_transform=feature_transform)
+        self.encoder = PointNetEncoder(global_feat=False)
         self.conv1 = torch.nn.Conv1d(1088, 512, 1)
         self.conv2 = torch.nn.Conv1d(512, 256, 1)
         self.conv3 = torch.nn.Conv1d(256, 128, 1)
@@ -166,6 +165,7 @@ class get_model(nn.Module):
     def load_model_from_ckpt(self, ckpt_path):
         ckpt = torch.load(ckpt_path)
         base_ckpt = {k.replace("module.", ""): v for k, v in ckpt['base_model'].items()}
+
 
         incompatible = self.load_state_dict(base_ckpt, strict=False)
         if incompatible.missing_keys:
@@ -194,7 +194,8 @@ class get_model(nn.Module):
             if m.bias is not None:
                 nn.init.constant_(m.bias, 0)
     
-    def forward(self, x):
+    def forward(self, x, l):
+        # Ignore label l
         batchsize = x.size()[0]
         n_pts = x.size()[2]
         x = self.encoder(x)

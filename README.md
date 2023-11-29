@@ -75,6 +75,11 @@ For ModelNet40, run:
 python main.py --config cfgs/PointSimsiam/finetune_modelnet.yaml --finetune_model --exp_name simsiam_finetune --ckpts experiments/.../ckpt-last.pth
 ```
 
+For FewShot ModelNet, run:
+```bash
+python main.py --config cfgs/PointSimsiam/fewshot.yaml --finetune_model --ckpts experiments/.../ckpt-last.pth --exp_name simsiam_fewshot --way <5|10> --shot <10|20> --fold <0...9>
+```
+
 For the three splits of ScanObjectNN, run:
 
 ```bash

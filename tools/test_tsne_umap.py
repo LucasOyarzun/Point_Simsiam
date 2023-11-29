@@ -17,8 +17,7 @@ def run_visualization(args, config, train_writer=None, val_writer=None):
     classes_names = json.load(open('data/ModelNet/modelnet40_normal_resampled/modelnet40_classes.json', 'r'))
     logger = get_logger(args.log_name)
     # build dataset
-    (train_sampler, train_dataloader), (_, test_dataloader),= builder.dataset_builder(args, config.dataset.train), \
-                                                            builder.dataset_builder(args, config.dataset.val)
+    (train_sampler, train_dataloader) = builder.dataset_builder(args, config.dataset.train)
     # build model
     base_model = builder.model_builder(config.model)
 

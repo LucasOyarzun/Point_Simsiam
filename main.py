@@ -4,6 +4,7 @@ from tools import run_linear_probing_modelnet40 as test_linear_modelnet40
 from tools import run_linear_probing_scan as test_linear_scan
 from tools import test_run_net as test_net
 from tools import run_test_invariation as test_invariation
+from tools import run_test_transformations as test_transformations
 from utils import parser, dist_utils, misc
 from utils.logger import *
 from utils.config import *
@@ -12,7 +13,6 @@ import os
 import torch
 from tensorboardX import SummaryWriter
 
-from test_transformations import main as test_transformations
 
 
 def main():
@@ -89,6 +89,8 @@ def main():
         test_net(args, config)
     elif args.finetune_model:
         finetune(args, config, train_writer, val_writer)
+    elif args.test_invariation:
+        test_invariation(args, config)
     elif args.test_transformations:
         test_transformations(args, config)
     else:

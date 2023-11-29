@@ -11,20 +11,6 @@ from torchvision import transforms
 from datasets import data_transforms
 
 
-# Point MAE
-# train_transforms = transforms.Compose(
-#     [
-#         # data_transforms.PointcloudScale(),
-#         # data_transforms.PointcloudRotate(),
-#         # data_transforms.PointcloudRotatePerturbation(),
-#         # data_transforms.PointcloudTranslate(),
-#         # data_transforms.PointcloudJitter(),
-#         # data_transforms.PointcloudRandomInputDropout(),
-#         data_transforms.PointcloudScaleAndTranslate(),
-#     ]
-# )
-
-# Point Simsiam
 train_transforms = transforms.Compose(
     [
         data_transforms.PointcloudScale(),

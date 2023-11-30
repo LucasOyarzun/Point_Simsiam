@@ -59,10 +59,10 @@ def get_args():
         default=None,
         help = 'linear model for linear probing')
     parser.add_argument(
-        '--test_invariation', 
+        '--test_cd', 
         action='store_true', 
         default=False, 
-        help = 'test invariation for certain ckpt')
+        help = 'test chamfer distance for shapenet')
     parser.add_argument(
         '--test_transformations', 
         action='store_true', 

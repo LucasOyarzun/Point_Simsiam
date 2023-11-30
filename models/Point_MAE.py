@@ -377,6 +377,59 @@ class Point_MAE(nn.Module):
             raise NotImplementedError
             # self.loss_func = emd().cuda()
 
+    def get_loss_acc(self, ret, gt):
+        loss = self.loss_ce(ret, gt.long())
+        pred = ret.argmax(-1)
+        acc = (pred == gt).sum() / float(gt.size(0))
+        return loss, acc * 100
+
+    def load_model_from_ckpt(self, bert_ckpt_path):
+        if bert_ckpt_path is not None:
+            ckpt = torch.load(bert_ckpt_path)
+            base_ckpt = {k.replace("module.", ""): v for k, v in ckpt['base_model'].items()}
+
+            for k in list(base_ckpt.keys()):
+                if k.startswith('MAE_encoder') :
+                    base_ckpt[k[len('MAE_encoder.'):]] = base_ckpt[k]
+                    del base_ckpt[k]
+                elif k.startswith('base_model'):
+                    base_ckpt[k[len('base_model.'):]] = base_ckpt[k]
+                    del base_ckpt[k]
+
+            incompatible = self.load_state_dict(base_ckpt, strict=False)
+
+            if incompatible.missing_keys:
+                print_log('missing_keys', logger='Transformer')
+                print_log(
+                    get_missing_parameters_message(incompatible.missing_keys),
+                    logger='Transformer'
+                )
+            if incompatible.unexpected_keys:
+                print_log('unexpected_keys', logger='Transformer')
+                print_log(
+                    get_unexpected_parameters_message(incompatible.unexpected_keys),
+                    logger='Transformer'
+                )
+
+            print_log(f'[Transformer] Successful Loading the ckpt from {bert_ckpt_path}', logger='Transformer')
+        else:
+            print_log('Training from scratch!!!', logger='Transformer')
+            self.apply(self._init_weights)
+
+    def _init_weights(self, m):
+        if isinstance(m, nn.Linear):
+            trunc_normal_(m.weight, std=.02)
+            if isinstance(m, nn.Linear) and m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+        elif isinstance(m, nn.LayerNorm):
+            nn.init.constant_(m.bias, 0)
+            nn.init.constant_(m.weight, 1.0)
+        elif isinstance(m, nn.Conv1d):
+            trunc_normal_(m.weight, std=.02)
+            if m.bias is not None:
+                nn.init.constant_(m.bias, 0)
+
+
 
     def forward(self, pts, vis = False, **kwargs):
         neighborhood, center = self.group_divider(pts)

@@ -15,7 +15,7 @@ conda activate point-simsiam
 
 # Install the according versions of torch and torchvision
 conda install pytorch torchvision cudatoolkit
-# e.g., conda install pytorch==1.11.0 torchvision==0.12.0 torchaudio==0.11.0 cudatoolkit=11.3
+# e.g., conda install pytorch==1.10,1+cu111 torchvision==0.11.2+cu111 torchaudio==0.10.1+cu111     cudatoolkit=11.3
 
 pip install -r requirements.txt
 ```
@@ -103,6 +103,11 @@ python main.py --root path/to/data --learning_rate 0.0002 --epoch 300 --ckpts <p
 For ModelNet40, run:
 ```bash
 python main.py --config cfgs/PointSimsiam/finetune_modelnet.yaml --test --vote --exp_name simsiam_finetune --ckpts experiments/finetune_modelnet/.../ckpt-best.pth 
+```
+
+To check Chamfer Distance after transformations, run:
+```bash
+python main.py --test_cd --config cfgs/PointSimsiam/pretrain.yaml
 ```
 
 ## Acknowledgement

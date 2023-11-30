@@ -15,7 +15,7 @@ conda activate point-simsiam
 
 # Install the according versions of torch and torchvision
 conda install pytorch torchvision cudatoolkit
-# e.g., conda install pytorch==1.10,1+cu111 torchvision==0.11.2+cu111 torchaudio==0.10.1+cu111     cudatoolkit=11.3
+# e.g., conda install pytorch torchvision torchaudio cudatoolkit=11.1 -c pytorch-lts -c nvidia
 
 pip install -r requirements.txt
 ```

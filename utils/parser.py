@@ -69,6 +69,11 @@ def get_args():
         default=False, 
         help = 'test transformations for certain ckpt')
     parser.add_argument(
+        '--test_tsne_umap', 
+        action='store_true', 
+        default=False, 
+        help = 'test tSNE and Umap for certain ckpt')
+    parser.add_argument(
         '--finetune_model', 
         action='store_true', 
         default=False, 
@@ -108,6 +113,9 @@ def get_args():
     if args.linear_probing and args.linear_model is None:
         raise ValueError(
             'linear_model shouldnt be None while linear_probing mode')
+    if args.test_tsne_umap and args.ckpts is None:
+        raise ValueError(
+            'ckpts shouldnt be None while test_tsne_umap mode')
 
     if 'LOCAL_RANK' not in os.environ:
         os.environ['LOCAL_RANK'] = str(args.local_rank)

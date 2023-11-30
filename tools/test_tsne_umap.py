@@ -11,8 +11,8 @@ import plotly.io as pio
 import time
 import torch.nn as nn
 
-def run_visualization(args, config, train_writer=None, val_writer=None):
-    num_times = 0
+# conda install -c conda-forge umap-learn
+def run_tsne_umap(args, config):
     NUM_CLASSES = 40
     classes_names = json.load(open('data/ModelNet/modelnet40_normal_resampled/modelnet40_classes.json', 'r'))
     logger = get_logger(args.log_name)
@@ -22,13 +22,7 @@ def run_visualization(args, config, train_writer=None, val_writer=None):
     base_model = builder.model_builder(config.model)
 
     # resume ckpts
-    if args.resume:
-        start_epoch, best_metric = builder.resume_model(base_model, args, logger = logger)
-    else:
-        if args.ckpts is not None:
-            base_model.load_model_from_ckpt(args.ckpts)
-        else:
-            print_log('Training from scratch', logger = logger)
+    base_model.load_model_from_ckpt(args.ckpts)
 
     if args.use_gpu:    
         base_model.to(args.local_rank)
@@ -45,30 +39,18 @@ def run_visualization(args, config, train_writer=None, val_writer=None):
         base_model = nn.DataParallel(base_model).cuda()
     # optimizer & scheduler
     optimizer, scheduler = builder.build_opti_sche(base_model, config)
-    
     if args.resume:
         builder.resume_optimizer(optimizer, args, logger = logger)
 
     X, y = [], []
-    with torch.no_grad():
-        base_model.eval()
-        for idx, (taxonomy_ids, model_ids, data) in enumerate(train_dataloader):
-
-            points = data[0].cuda().permute(0, 2, 1).contiguous()
-            label = data[1].cuda()
-            if num_times == 0:
-                start_time = time.time()
-            feats = base_model(points)
-            if num_times == 0:
-                num_times += 1
-                end_time = time.time()
-                print("Tiempo inferencia:", end_time - start_time)
-                print("Parámetros:", sum(p.numel() for p in base_model.parameters() if p.requires_grad))
-            return
-            y.append(label.cpu().numpy())
-            X.append(feats.cpu().numpy())
-
-    # if not args.3d:
+    # with torch.no_grad():
+    #     base_model.eval()
+    #     for idx, (taxonomy_ids, model_ids, data) in enumerate(train_dataloader):
+    #         points = data[0].cuda()
+    #         label = data[1].cuda()
+    #         feats = base_model(points)
+    #         y.append(label.cpu().numpy())
+    #         X.append(feats.cpu().numpy())
 
     X, y = np.concatenate(X), np.concatenate(y)
     X_embedded = umap.UMAP(n_neighbors=30, min_dist=0.1, n_components=2, random_state=0).fit_transform(X)

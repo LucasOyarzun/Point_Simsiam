@@ -5,6 +5,7 @@ from tools import run_linear_probing_scan as test_linear_scan
 from tools import test_run_net as test_net
 from tools import run_test_cd as test_cd
 from tools import run_test_transformations as test_transformations
+from tools import run_tsne_umap as test_tsne_umap
 from utils import parser, dist_utils, misc
 from utils.logger import *
 from utils.config import *
@@ -93,6 +94,8 @@ def main():
         test_cd(args, config)
     elif args.test_transformations:
         test_transformations(args, config)
+    elif args.test_tsne_umap:
+        test_tsne_umap(args, config)
     else:
         pretrain(args, config, train_writer, val_writer)
 

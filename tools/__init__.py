@@ -6,3 +6,4 @@ from .runner_linear_probing import run_linear_probing_modelnet40, run_linear_pro
 from .test_cd import run_test_cd
 from .test_transformations import run_test_transformations
 from .test_tsne_umap import run_tsne_umap
+from .generate_feature_distances import run_generate_feature_distances

@@ -2,6 +2,7 @@ from tools import pretrain_run_net as pretrain
 from tools import finetune_run_net as finetune
 from tools import run_linear_probing_modelnet40 as test_linear_modelnet40
 from tools import run_linear_probing_scan as test_linear_scan
+from tools import run_generate_feature_distances as generate_feature_distances
 from tools import test_run_net as test_net
 from tools import run_test_cd as test_cd
 from tools import run_test_transformations as test_transformations
@@ -96,6 +97,8 @@ def main():
         test_transformations(args, config)
     elif args.test_tsne_umap:
         test_tsne_umap(args, config)
+    elif args.feature_distances:
+        generate_feature_distances(args, config)
     else:
         pretrain(args, config, train_writer, val_writer)
 

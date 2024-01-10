@@ -18,3 +18,4 @@ log/
 data
 data-local/
 shapenetcore_partanno_segmentation_benchmark_v0_normal/
+data-local

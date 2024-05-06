@@ -110,6 +110,16 @@ To check Chamfer Distance after transformations, run:
 python main.py --test_cd --config cfgs/PointSimsiam/pretrain.yaml
 ```
 
+To get Umap and t-SNE figures, run:
+```bash
+python main.py --config cfgs/PointSimsiam/finetune_modelnet.yaml --feature_distances --exp_name test_tsne_umap --ckpts data/experiments/pretrain/...
+```
+
+To obtain feature distances, run:
+```bash
+python main.py --config cfgs/PointSimsiam/finetune_modelnet.yaml --feature_distances --exp_name feature_distances --ckpts data/experiments/pretrain/...
+```
+
 ## Acknowledgement
 This repo benefits from:
 

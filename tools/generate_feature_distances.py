@@ -26,13 +26,17 @@ def run_generate_feature_distances(args, config):
 
     distance_matrix = calculate_distance_matrix(X)
     np.savetxt(
-        f"distance_{config.model.NAME}_{config.model.encoder.NAME}.txt",
+        # f"distance_{config.model.NAME}_{config.model.encoder.NAME}.txt",
+        f"distance_{config.model.NAME}.txt",
         distance_matrix.numpy(),
     )
 
     classes_names = {name: idx for idx, name in enumerate(classes_names)}
     save_classifications(
-        classes_names, y, f"{config.model.NAME}_{config.model.encoder.NAME}.cla"
+        # classes_names, y, f"{config.model.NAME}_{config.model.encoder.NAME}.cla"
+        classes_names,
+        y,
+        f"{config.model.NAME}.cla",
     )
     return distance_matrix
 

@@ -60,13 +60,14 @@ def run_tsne_umap(args, config):
         total_time = 0
         for idx, (taxonomy_ids, model_ids, data) in enumerate(train_dataloader):
             points = data[0].cuda()
-            # label = data[1].cuda()
-            feats = base_model(points)
             init_time = time.time()
-            # y.append(label.cpu().numpy())
-            X.append(feats.cpu().numpy())
+            feats = base_model(points)
             batch_time = time.time() - init_time
             total_time += batch_time
+            X.append(feats.cpu().numpy())
+
+            label = data[1].cuda()
+            y.append(label.cpu().numpy())
 
     print("total_time: ", total_time)
     X, y = np.concatenate(X), np.concatenate(y)
